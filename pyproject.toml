@@ -1,0 +1,75 @@
+[project]
+name = "three_variable"
+version = "0.0.1"
+authors = [{ "name" = "Matthew Ord", "email" = "matthew.ord1@gmail.com" }]
+description = "A Framework for Automatic Basis Transformations"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "sympy @ git+https://github.com/Matt-Ord/sympy.git@11c54d1fb811d5f514f77e92baf99e7721564600",
+]
+
+[tool.ruff]
+unsafe-fixes = true
+exclude = [".git", ".git-rewrite", ".vscode"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+preview = true
+ignore = [
+    "COM812",
+    "E501",
+    "S101",
+    "PT009",
+    "D100",
+    "D105",
+    "CPY001",
+    "TD003",
+    "TD002",
+    "DOC201",
+    "DOC402",
+    "PD",
+    "T201",
+]
+
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*" = ["PLR6301", "PLC2701", "PLR0914", "D101", "D102", "D103", "D104"]
+"examples/**/*" = ["INP001"]
+"docs/**/*" = ["INP001", "I002"]
+
+[tool.ruff.lint.pylint]
+allow-dunder-method-names = [
+    "__as_fundamental__",
+    "__from_fundamental__",
+    "__into_fundamental__",
+    "__as_transformed__",
+    "__into_transformed__",
+    "__from_transformed__",
+    "__convert_vector_into__",
+    "__into_inner__",
+    "__from_inner__",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["tests", "slate", "examples"]
+reportImplicitOverride = true
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
