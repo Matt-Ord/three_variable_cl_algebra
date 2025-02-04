@@ -13,7 +13,7 @@ wheels = [
 [[package]]
 name = "sympy"
 version = "1.14.dev0"
-source = { git = "https://github.com/Matt-Ord/sympy.git?rev=11c54d1fb811d5f514f77e92baf99e7721564600#11c54d1fb811d5f514f77e92baf99e7721564600" }
+source = { git = "https://github.com/Matt-Ord/sympy.git?rev=86e1079b602ffb85bcf7eb19faa1d9ef8d9ad492#86e1079b602ffb85bcf7eb19faa1d9ef8d9ad492" }
 dependencies = [
     { name = "mpmath" },
 ]
@@ -27,4 +27,4 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "sympy", git = "https://github.com/Matt-Ord/sympy.git?rev=11c54d1fb811d5f514f77e92baf99e7721564600#11c54d1fb811d5f514f77e92baf99e7721564600" }]
+requires-dist = [{ name = "sympy", git = "https://github.com/Matt-Ord/sympy.git?rev=86e1079b602ffb85bcf7eb19faa1d9ef8d9ad492#86e1079b602ffb85bcf7eb19faa1d9ef8d9ad492" }]
