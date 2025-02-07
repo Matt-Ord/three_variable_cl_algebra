@@ -1,0 +1,226 @@
+from __future__ import annotations
+
+from functools import cache
+
+import sympy as sp
+from sympy.physics.secondquant import (
+    CreateBoson,
+    Dagger,
+    FockStateBosonKet,
+    apply_operators,
+)
+
+from three_variable.symbols import (
+    KBT,
+    alpha,
+    beta,
+    eta_m,
+    hbar,
+    lambda_,
+    lambda_from_eta_lambda,
+    m,
+    m_from_eta_m,
+    mu,
+    noise,
+    nu,
+    omega,
+    omega_from_eta_omega,
+    phi,
+)
+
+from .decorators import timed
+
+
+@cache
+def create_vaccum_boson(i: float) -> sp.Expr:
+    b = sp.exp(sp.I * phi) * CreateBoson(i) + alpha
+    return mu * b + nu * Dagger(b)
+
+
+@cache
+def annihilate_vaccum_boson(i: float) -> sp.Expr:
+    return Dagger(create_vaccum_boson(i))
+
+
+def get_x_operator(i: float) -> sp.Expr:
+    return (create_vaccum_boson(i) + annihilate_vaccum_boson(i)) / sp.sqrt(2)
+
+
+def get_p_operator(i: float) -> sp.Expr:
+    return (
+        -sp.I
+        * hbar
+        * (create_vaccum_boson(i) - annihilate_vaccum_boson(i))
+        / sp.sqrt(2)
+    )
+
+
+def _get_lindblad_operator_raw(i: float) -> sp.Expr:
+    return (sp.sqrt(lambda_ * (4 * m * KBT) / (hbar**2)) * get_x_operator(i)) + (
+        sp.I * sp.sqrt(lambda_ / (4 * m * KBT)) * get_p_operator(i)
+    )
+
+
+def _get_lindblad_operator_simple(i: float) -> sp.Expr:
+    return sp.sqrt(lambda_ / (4 * eta_m)) * (
+        (2 * eta_m + 1) * create_vaccum_boson(i)
+        + (2 * eta_m - 1) * annihilate_vaccum_boson(i)
+    )
+
+
+@cache
+def get_lindblad_operator(i: float) -> sp.Expr:
+    # Sanity check - does the raw and simple form of the lindblad operator match?
+    raw = _get_lindblad_operator_raw(i).subs({m: m_from_eta_m})
+    simple = _get_lindblad_operator_simple(i)
+    diff = sp.simplify(sp.expand(raw - simple))
+    assert diff == 0
+    return simple
+
+
+@cache
+def get_lindblad_expectation(i: float) -> sp.Expr:
+    lindblad_operator = get_lindblad_operator(i)
+    vaccum = FockStateBosonKet([0])
+    return apply_operators(Dagger(vaccum) * lindblad_operator * vaccum)
+
+
+def get_diffusion_term(i: float) -> sp.Expr:
+    lindblad_operator = get_lindblad_operator(i)
+    lindblad_expectation = get_lindblad_expectation(i)
+    return noise * (lindblad_operator - lindblad_expectation)
+
+
+def get_drift_term(i: float) -> sp.Expr:
+    lindblad_operator = get_lindblad_operator(i)
+    lindblad_expectation = get_lindblad_expectation(i)
+    return (
+        sp.conjugate(lindblad_expectation) * lindblad_operator
+        - (Dagger(lindblad_operator) * lindblad_operator) / 2
+        - (sp.conjugate(lindblad_expectation) * lindblad_expectation) / 2
+    )
+
+
+def _get_hamiltonian_shift_term_raw(i: float) -> sp.Expr:
+    x = get_x_operator(i)
+    p = get_p_operator(i)
+    return lambda_ * (x * p + p * x) / 2
+
+
+def _get_hamiltonian_shift_term_simple(i: float) -> sp.Expr:
+    creator = create_vaccum_boson(i)
+    annihilator = annihilate_vaccum_boson(i)
+    return -sp.I * lambda_ * hbar * (creator**2 - annihilator**2) / 2
+
+
+def get_hamiltonian_shift_term(i: float) -> sp.Expr:
+    # TODO: Sanity check - does the raw and simple form of the hamiltonian shift term match?
+    # For this we need to be able to use normal ordering
+    raw = _get_hamiltonian_shift_term_raw(i)
+    simple = _get_hamiltonian_shift_term_simple(i)
+    assert sp.simplify(sp.expand(raw - simple)) == 0
+    return simple
+
+
+def get_kinetic_term(i: float) -> sp.Expr:
+    p = get_p_operator(i)
+    return (p * p) / (2 * m)
+
+
+def get_linear_term(i: float) -> sp.Expr:
+    x_shift = (
+        alpha * (mu + sp.conjugate(nu)) + sp.conjugate(alpha) * (nu + mu)
+    ) / sp.sqrt(2)
+    return get_x_operator(i) - x_shift
+
+
+def get_harmonic_term(i: float) -> sp.Expr:
+    x = get_linear_term(i)
+    return x**2 - (mu + nu) * (mu + sp.conjugate(nu)) / 2
+
+
+@cache
+@timed
+def get_squeeze_derivative_system() -> sp.Expr:
+    state = FockStateBosonKet([2])
+    vaccum = FockStateBosonKet([0])
+
+    linear_term = sp.Symbol("V_1") * get_linear_term(0)
+    kinetic_term = get_kinetic_term(0)
+    harmonic_term = (m * omega**2) * get_harmonic_term(0) / 2
+
+    out = sp.factor_terms(
+        apply_operators(
+            Dagger(state) * (kinetic_term + linear_term + harmonic_term) * vaccum
+        )
+    )
+    subbed = (-sp.I / hbar) * out.subs(
+        {
+            phi: 0,
+            m: m_from_eta_m,
+            lambda_: lambda_from_eta_lambda,
+            omega: omega_from_eta_omega,
+        }
+    )
+    prefactor = (mu**2 / 2) * (1 / sp.sqrt(2))
+    return sp.simplify(prefactor * subbed)
+
+
+@cache
+def get_squeeze_derivative_system_beta() -> sp.Expr:
+    derivative = get_squeeze_derivative_system()
+    subbed = derivative.subs({nu: beta * mu})
+    return sp.factor_terms(subbed)
+
+
+@cache
+@timed
+def get_squeeze_derivative_environment() -> sp.Expr:
+    state = FockStateBosonKet([2])
+    vaccum = FockStateBosonKet([0])
+
+    drift_term = get_drift_term(0)
+    hamiltonian_shift_term = get_hamiltonian_shift_term(0)
+
+    out = sp.factor_terms(
+        apply_operators(
+            Dagger(state)
+            * (((-sp.I / hbar) * hamiltonian_shift_term) + drift_term)
+            * vaccum
+        )
+    )
+    subbed = out.subs(
+        {
+            phi: 0,
+            m: m_from_eta_m,
+            lambda_: lambda_from_eta_lambda,
+            omega: omega_from_eta_omega,
+        }
+    )
+    prefactor = (mu**2 / 2) * (1 / sp.sqrt(2))
+    out = sp.simplify(prefactor * subbed)
+    neumer, denom = sp.together(out).as_numer_denom()
+    neum_poly = sp.Poly(neumer, eta_m)
+    return sp.factor_terms(neum_poly.as_expr()) / denom
+
+
+@cache
+def get_squeeze_derivative_environment_beta() -> sp.Expr:
+    derivative = get_squeeze_derivative_environment()
+    subbed = derivative.subs({nu: beta * mu})
+    return sp.factor_terms(subbed)
+
+
+@cache
+def get_squeeze_derivative() -> sp.Expr:
+    return sp.factor_terms(
+        get_squeeze_derivative_system() + get_squeeze_derivative_environment()
+    )
+
+
+@cache
+@timed
+def get_squeeze_derivative_beta() -> sp.Expr:
+    return sp.together(
+        get_squeeze_derivative_system_beta() + get_squeeze_derivative_environment_beta()
+    )

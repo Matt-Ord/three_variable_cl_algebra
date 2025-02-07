@@ -6,10 +6,8 @@ from __future__ import annotations
 import sympy as sp
 
 # Define symbols
-beta = sp.symbols("beta", complex=True)
-hbar, m, lambda_, KBT, omega = sp.symbols(
-    r"hbar m lambda KBT omega", real=True, positive=True
-)
+
+
 tau = 2 * sp.sqrt(KBT * m / (hbar**2))
 
 beta_star = sp.conjugate(beta)
