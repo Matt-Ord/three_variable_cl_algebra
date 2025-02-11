@@ -13,7 +13,7 @@ class EtaParameters:
     eta_omega: float
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class BaseParameters:
     m: float
     lambda_: float
@@ -26,6 +26,11 @@ class BaseParameters:
         eta_lambda = Boltzmann * self.temperature / (self.lambda_ * hbar)
         eta_omega = Boltzmann * self.temperature / (hbar * self.omega)
         return EtaParameters(eta_m=eta_m, eta_lambda=eta_lambda, eta_omega=eta_omega)
+
+    def with_temperature(self, temperature: float) -> BaseParameters:
+        return BaseParameters(
+            m=self.m, lambda_=self.lambda_, omega=self.omega, temperature=temperature
+        )
 
 
 @dataclass
@@ -65,6 +70,14 @@ ELENA_NA_CU = ElenaParameters(
     m=NA_MASS,
     barrier_energy=55 * 10**-3 * electron_volt,
     lattice_parameter=ELENA_CU_LATTICE_PARAMETER,
+    temperature=155,
+    lambda_=0.2 * 10**12,
+)
+
+ELENA_NA_CU_BALLISTIC = ElenaParameters(
+    m=NA_MASS,
+    barrier_energy=55 * 10**-3 * electron_volt,
+    lattice_parameter=ELENA_CU_LATTICE_PARAMETER / np.sqrt(3),
     temperature=155,
     lambda_=0.2 * 10**12,
 )

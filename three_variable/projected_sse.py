@@ -33,8 +33,8 @@ from .decorators import timed
 
 @cache
 def create_vaccum_boson(i: float) -> sp.Expr:
-    b = sp.exp(sp.I * phi) * CreateBoson(i) + alpha
-    return mu * b + nu * Dagger(b)
+    b = CreateBoson(i) + alpha
+    return mu * b - nu * Dagger(b)
 
 
 @cache
@@ -95,9 +95,9 @@ def get_drift_term(i: float) -> sp.Expr:
     lindblad_operator = get_lindblad_operator(i)
     lindblad_expectation = get_lindblad_expectation(i)
     return (
-        sp.conjugate(lindblad_expectation) * lindblad_operator
+        Dagger(lindblad_expectation) * lindblad_operator
         - (Dagger(lindblad_operator) * lindblad_operator) / 2
-        - (sp.conjugate(lindblad_expectation) * lindblad_expectation) / 2
+        - (Dagger(lindblad_expectation) * lindblad_expectation) / 2
     )
 
 
@@ -127,16 +127,28 @@ def get_kinetic_term(i: float) -> sp.Expr:
     return (p * p) / (2 * m)
 
 
-def get_linear_term(i: float) -> sp.Expr:
-    x_shift = (
-        alpha * (mu + sp.conjugate(nu)) + sp.conjugate(alpha) * (nu + mu)
+def get_x_polynomial(i: float, n: int) -> sp.Expr:
+    x = sp.Symbol("x")
+    x_0 = sp.Symbol("x_0")
+    c = sp.Symbol("C")
+    polynomial = sp.Integer(1)
+    for _ in range(n):
+        polynomial = (x - x_0) * polynomial - c * sp.Derivative(
+            polynomial, x, evaluate=True
+        )
+    x_0_expr = (
+        alpha * (mu - sp.conjugate(nu)) + sp.conjugate(alpha) * (mu - nu)
     ) / sp.sqrt(2)
-    return get_x_operator(i) - x_shift
+    c_expr = (mu - nu) * (mu - sp.conjugate(nu)) / 2
+    return polynomial.subs({x: get_x_operator(i), x_0: x_0_expr, c: c_expr})
+
+
+def get_linear_term(i: float) -> sp.Expr:
+    return get_x_polynomial(i, 1)
 
 
 def get_harmonic_term(i: float) -> sp.Expr:
-    x = get_linear_term(i)
-    return x**2 - (mu + nu) * (mu + sp.conjugate(nu)) / 2
+    return get_x_polynomial(i, 2)
 
 
 @cache
@@ -224,3 +236,59 @@ def get_squeeze_derivative_beta() -> sp.Expr:
     return sp.together(
         get_squeeze_derivative_system_beta() + get_squeeze_derivative_environment_beta()
     )
+
+
+@cache
+@timed
+def get_alpha_derivative_system() -> sp.Expr:
+    state = FockStateBosonKet([1])
+    vaccum = FockStateBosonKet([0])
+
+    linear_term = sp.Symbol("V_1") * get_linear_term(0)
+    kinetic_term = get_kinetic_term(0)
+    harmonic_term = (m * omega**2) * get_harmonic_term(0) / 2
+
+    out = sp.factor_terms(
+        apply_operators(
+            Dagger(state) * (kinetic_term + linear_term + harmonic_term) * vaccum
+        )
+    )
+    subbed = (-sp.I / hbar) * out.subs(
+        {
+            phi: 0,
+            m: m_from_eta_m,
+            lambda_: lambda_from_eta_lambda,
+            omega: omega_from_eta_omega,
+        }
+    )
+    return sp.simplify(subbed)
+
+
+@cache
+@timed
+def get_alpha_derivative_environment() -> sp.Expr:
+    state = FockStateBosonKet([1])
+    vaccum = FockStateBosonKet([0])
+
+    drift_term = get_drift_term(0)
+    hamiltonian_shift_term = get_hamiltonian_shift_term(0)
+
+    out = sp.factor_terms(
+        apply_operators(
+            Dagger(state)
+            * (((-sp.I / hbar) * hamiltonian_shift_term) + drift_term)
+            * vaccum
+        )
+    )
+    subbed = out.subs(
+        {
+            phi: 0,
+            m: m_from_eta_m,
+            lambda_: lambda_from_eta_lambda,
+            omega: omega_from_eta_omega,
+        }
+    )
+    out = sp.simplify(subbed)
+    neumer, denom = sp.together(out).as_numer_denom()
+    neumer = sp.factor(neumer)
+    return neumer / denom

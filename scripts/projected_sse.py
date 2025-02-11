@@ -9,6 +9,8 @@ from sympy.physics.secondquant import (
 
 from three_variable.equilibrium_squeeze import get_squeeze_derivative_R
 from three_variable.projected_sse import (
+    get_alpha_derivative_environment,
+    get_alpha_derivative_system,
     get_diffusion_term,
     get_drift_term,
     get_hamiltonian_shift_term,
@@ -32,6 +34,12 @@ kinetic_term = get_kinetic_term(0)
 harmonic_term = get_harmonic_term(0)
 linear_term = get_linear_term(0)
 
+sp.print_latex(get_alpha_derivative_system())
+print()
+sp.print_latex(get_alpha_derivative_environment())
+input()
+
+print("Squeeze derivative")
 sp.print_latex(get_squeeze_derivative_system_beta())
 print()
 sp.print_latex(get_squeeze_derivative_environment_beta())

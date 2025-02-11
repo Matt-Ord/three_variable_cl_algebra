@@ -9,7 +9,7 @@ from sympy.physics.secondquant import (
 )
 
 # Define symbolic variables
-alpha, beta = sp.symbols(r"\alpha \beta", complex=True)
+alpha, beta = sp.symbols(r"\alpha \beta")
 
 creation_operator = CreateBoson(0)
 

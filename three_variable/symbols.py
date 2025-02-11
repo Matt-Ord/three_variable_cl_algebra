@@ -4,15 +4,15 @@ import sympy as sp
 from sympy.physics.units import hbar
 
 # Physical constants
-noise = sp.Symbol(r"\xi(t)", complex=True)
+noise = sp.Symbol(r"\xi(t)")
 lambda_ = sp.Symbol("lambda", real=True, positive=True)
 omega = sp.Symbol("omega", real=True, positive=True)
 m = sp.Symbol("m", real=True, positive=True)
 KBT = sp.Symbol("KBT", real=True, positive=True)
 
 # Phi and alpha for the coherent state
-phi = sp.Symbol(r"\phi", complex=True)
-alpha = sp.Symbol(r"\alpha", complex=True)
+phi = sp.Symbol(r"\phi", real=True)
+alpha = sp.Symbol(r"\alpha")
 
 # Definitions for the squeezing operator, and squeezing derivative
 r = sp.Symbol("r", real=True)

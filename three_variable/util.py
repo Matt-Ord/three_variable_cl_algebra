@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from typing import IO, TYPE_CHECKING, Any, Literal, cast, overload, override
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypedDict,
+    Unpack,
+    cast,
+    overload,
+    override,
+)
 
 import numpy as np
 
@@ -71,6 +81,10 @@ if TYPE_CHECKING:
 Scale = Literal["symlog", "linear", "log"]
 
 
+class LegendKwargs(TypedDict, total=False):  # noqa: D101
+    loc: Literal["upper right", "upper left", "lower left", "lower right"]
+
+
 class Axes(MPLAxesBase):
     @override
     def get_figure(self) -> Figure | None: ...  # type: ignore bad overload
@@ -138,7 +152,7 @@ class Axes(MPLAxesBase):
     ) -> Text: ...
 
     @overload
-    def legend(self) -> Legend: ...
+    def legend(self, **kwargs: Unpack[LegendKwargs]) -> Legend: ...
     @overload
     def legend(
         self, handles: Iterable[Artist | tuple[Artist, ...]], labels: Iterable[str]

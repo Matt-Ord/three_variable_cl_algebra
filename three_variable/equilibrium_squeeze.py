@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 from functools import cache
+from typing import TYPE_CHECKING
 
-import numpy as np
 import sympy as sp
 
 from .decorators import timed
 from .projected_sse import get_squeeze_derivative_beta
 from .symbols import beta, eta_lambda, eta_m, eta_omega, r, theta
+
+if TYPE_CHECKING:
+    import numpy as np
 
 # We actually solve for R not for beta
 R = sp.Symbol("R")
@@ -33,7 +36,6 @@ R_from_beta = (1 - sp.conjugate(beta)) / (1 + sp.conjugate(beta))
 def get_squeeze_derivative_R() -> sp.Expr:
     squeeze_derivative = get_squeeze_derivative_beta()
     beta_from_R = sp.solve(R_from_beta - R, sp.conjugate(beta))[0]
-
     subbed = squeeze_derivative.subs({sp.conjugate(beta): beta_from_R})
     return sp.together(sp.simplify(subbed))
 
@@ -41,7 +43,7 @@ def get_squeeze_derivative_R() -> sp.Expr:
 @cache
 def get_equilibrium_squeeze_R(*, positive: bool = False) -> sp.Expr:
     squeeze_derivative = get_squeeze_derivative_R()
-    return sp.solve(squeeze_derivative, R)[0 if positive else 1]
+    return sp.solve(squeeze_derivative, R)[1 if positive else 0]
 
 
 _eta_m_symbol = eta_m
@@ -168,16 +170,27 @@ def get_uncertainty_R() -> sp.Expr:
     return neum / sp.factor(denom)
 
 
-def evaluate_equilibrium_uncertainty(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
-    *,
-    positive: bool = False,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-    expression_lambda = sp.lambdify((R), get_uncertainty_R())
-    equilibrium_R = evaluate_equilibrium_R(  # noqa: N806
-        eta_m, eta_omega, eta_lambda, positive=positive
+@cache
+def get_uncertainty_x_R() -> sp.Expr:
+    beta_from_R = sp.solve(R_from_beta - R, beta)[0]
+    uncertainty_beta = get_uncertainty_x_beta()
+    uncertainty_R = uncertainty_beta.subs({beta: beta_from_R})
+    uncertainty_R = sp.together(sp.simplify(sp.expand(uncertainty_R)))
+    neum, denom = uncertainty_R.as_numer_denom()
+    uncertainty_R = sp.simplify(neum) / sp.factor(denom)
+    return uncertainty_R.subs(
+        {R * sp.conjugate(R): sp.Abs(R) ** 2, sp.conjugate(R): 2 * sp.re(R) - R}
     )
 
-    return np.real_if_close(expression_lambda(equilibrium_R))
+
+@cache
+def get_uncertainty_p_R() -> sp.Expr:
+    beta_from_R = sp.solve(R_from_beta - R, beta)[0]
+    uncertainty_beta = get_uncertainty_p_beta()
+    uncertainty_R = uncertainty_beta.subs({beta: beta_from_R})
+    uncertainty_R = sp.together(sp.simplify(sp.expand(uncertainty_R)))
+    neum, denom = uncertainty_R.as_numer_denom()
+    uncertainty_R = sp.simplify(neum) / sp.factor(denom)
+    return uncertainty_R.subs(
+        {R * sp.conjugate(R): sp.Abs(R) ** 2, sp.conjugate(R): 2 * sp.re(R) - R}
+    )

@@ -10,8 +10,10 @@ from three_variable.equilibrium_squeeze import (
     get_uncertainty_x_beta,
 )
 
+print("Uncertainty x beta")
 sp.print_latex(get_uncertainty_x_beta())
 
+print("Uncertainty beta")
 sp.print_latex(get_uncertainty_beta())
 print()
 
