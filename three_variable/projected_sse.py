@@ -175,7 +175,11 @@ def get_squeeze_derivative_system() -> sp.Expr:
         }
     )
     prefactor = (mu**2 / 2) * (1 / sp.sqrt(2))
-    return sp.simplify(prefactor * subbed)
+    out = sp.simplify(prefactor * subbed)
+    neumer, denom = sp.together(out).as_numer_denom()
+    collected = sp.collect(sp.expand(neumer), eta_m, evaluate=False)
+    neumer = sum(k * sp.factor(v) for k, v in collected.items())
+    return neumer / denom
 
 
 @cache
@@ -212,8 +216,8 @@ def get_squeeze_derivative_environment() -> sp.Expr:
     prefactor = (mu**2 / 2) * (1 / sp.sqrt(2))
     out = sp.simplify(prefactor * subbed)
     neumer, denom = sp.together(out).as_numer_denom()
-    neum_poly = sp.Poly(neumer, eta_m)
-    return sp.factor_terms(neum_poly.as_expr()) / denom
+    collected = sp.collect(sp.expand(neumer), eta_m, evaluate=False)
+    return sp.factor_terms(sum(k * sp.factor(v) for k, v in collected.items())) / denom
 
 
 @cache
@@ -261,7 +265,17 @@ def get_alpha_derivative_system() -> sp.Expr:
             omega: omega_from_eta_omega,
         }
     )
-    return sp.simplify(subbed)
+    collected = sp.collect(
+        sp.expand(sp.simplify(subbed)), sp.Symbol("V_1"), evaluate=False
+    )
+    return sum(k * sp.factor(v) for k, v in collected.items())
+
+
+@cache
+def get_alpha_derivative_system_beta() -> sp.Expr:
+    derivative = get_alpha_derivative_system()
+    subbed = derivative.subs({nu: beta * mu})
+    return sp.factor_terms(subbed)
 
 
 @cache
@@ -292,3 +306,36 @@ def get_alpha_derivative_environment() -> sp.Expr:
     neumer, denom = sp.together(out).as_numer_denom()
     neumer = sp.factor(neumer)
     return neumer / denom
+
+
+@cache
+def get_alpha_derivative_environment_beta() -> sp.Expr:
+    derivative = get_alpha_derivative_environment()
+    subbed = derivative.subs({nu: beta * mu})
+    return sp.factor_terms(subbed)
+
+
+@cache
+@timed
+def get_alpha_derivative_stochastic() -> sp.Expr:
+    state = FockStateBosonKet([1])
+    vaccum = FockStateBosonKet([0])
+
+    diffusion_term = get_diffusion_term(0)
+    out = sp.factor_terms(apply_operators(Dagger(state) * (diffusion_term) * vaccum))
+    subbed = out.subs(
+        {
+            phi: 0,
+            m: m_from_eta_m,
+            lambda_: lambda_from_eta_lambda,
+            omega: omega_from_eta_omega,
+        }
+    )
+    return sp.simplify(subbed)
+
+
+@cache
+def get_alpha_derivative_stochastic_beta() -> sp.Expr:
+    derivative = get_alpha_derivative_stochastic()
+    subbed = derivative.subs({nu: beta * mu})
+    return sp.factor_terms(subbed)

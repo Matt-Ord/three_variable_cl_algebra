@@ -8,7 +8,7 @@ import sympy as sp
 
 from .decorators import timed
 from .projected_sse import get_squeeze_derivative_beta
-from .symbols import beta, eta_lambda, eta_m, eta_omega, r, theta
+from .symbols import beta, eta_lambda, eta_m, eta_omega, mu, r, theta
 
 if TYPE_CHECKING:
     import numpy as np
@@ -37,13 +37,19 @@ def get_squeeze_derivative_R() -> sp.Expr:
     squeeze_derivative = get_squeeze_derivative_beta()
     beta_from_R = sp.solve(R_from_beta - R, sp.conjugate(beta))[0]
     subbed = squeeze_derivative.subs({sp.conjugate(beta): beta_from_R})
-    return sp.together(sp.simplify(subbed))
+    mu_squared_from_beta = 1 / (1 - beta * sp.conjugate(beta))
+    mu_from_r = mu_squared_from_beta.subs(
+        {sp.conjugate(beta): beta_from_R, beta: sp.conjugate(beta_from_R)}
+    )
+    numer, denom = sp.together(mu_from_r).as_numer_denom()
+    mu_from_r = sp.simplify(numer) / sp.factor(sp.simplify(denom))
+    return sp.together(sp.simplify(subbed)).subs({mu**2: mu_from_r})
 
 
 @cache
 def get_equilibrium_squeeze_R(*, positive: bool = False) -> sp.Expr:
     squeeze_derivative = get_squeeze_derivative_R()
-    return sp.solve(squeeze_derivative, R)[1 if positive else 0]
+    return sp.solve(squeeze_derivative, R)[0 if positive else 1]
 
 
 _eta_m_symbol = eta_m

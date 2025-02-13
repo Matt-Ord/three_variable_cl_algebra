@@ -3,6 +3,7 @@ from __future__ import annotations
 import sympy as sp
 
 from three_variable.equilibrium_squeeze import (
+    eta_lambda,
     eta_m,
     eta_omega,
     get_equilibrium_squeeze_beta,
@@ -91,6 +92,18 @@ sp.print_latex(get_equilibrium_squeeze_R())
 print()
 print("get_equilibrium_squeeze_beta")
 sp.print_latex(get_equilibrium_squeeze_beta())
+print()
+
+print("Free Particle Limit")
+sp.print_latex(sp.limit(get_equilibrium_squeeze_R(), eta_omega, sp.oo))
+print("High Friction Limit")
+sp.print_latex(sp.limit(get_equilibrium_squeeze_R(), eta_lambda, sp.oo))
+print("High Friction Free particle")
+sp.print_latex(
+    sp.series(
+        sp.limit(get_equilibrium_squeeze_R(), eta_omega, sp.oo), eta_lambda, sp.oo
+    )
+)
 print()
 
 assert get_equilibrium_squeeze_derivative() == 0
