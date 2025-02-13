@@ -36,7 +36,7 @@ def test_uncertainty_x() -> None:
         }
     )
 
-    assert sp.simplify(uncertainty_x_manual - 2 * uncertainty_x) == 0
+    assert sp.simplify(uncertainty_x_manual - uncertainty_x) == 0
 
     print("Uncertainty p")
     vaccum = FockStateBosonKet([0])
@@ -55,4 +55,4 @@ def test_uncertainty_x() -> None:
         }
     )
 
-    assert sp.simplify(uncertainty_p_manual - 2 * hbar**2 * uncertainty_p) == 0
+    assert sp.simplify(uncertainty_p_manual - hbar**2 * uncertainty_p) == 0

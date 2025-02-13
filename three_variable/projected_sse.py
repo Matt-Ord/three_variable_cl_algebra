@@ -339,3 +339,11 @@ def get_alpha_derivative_stochastic_beta() -> sp.Expr:
     derivative = get_alpha_derivative_stochastic()
     subbed = derivative.subs({nu: beta * mu})
     return sp.factor_terms(subbed)
+
+
+def get_alpha_derivative_beta() -> sp.Expr:
+    return sp.factor_terms(
+        get_alpha_derivative_system_beta()
+        + get_alpha_derivative_environment_beta()
+        + get_alpha_derivative_stochastic_beta()
+    )

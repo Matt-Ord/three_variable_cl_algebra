@@ -20,13 +20,14 @@ print()
 sp.print_latex(get_alpha_derivative_stochastic_beta())
 print()
 
+
 print("Squeeze derivative")
 sp.print_latex(get_squeeze_derivative_system_beta())
 print()
 sp.print_latex(get_squeeze_derivative_environment_beta())
 print()
 
-print("Complete Squeeze derivative")
+print("Full Squeeze derivative")
 sp.print_latex(get_squeeze_derivative_beta())
 print()
 sp.print_latex(get_squeeze_derivative_R())

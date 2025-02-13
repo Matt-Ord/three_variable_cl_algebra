@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import sympy as sp
 
 from .decorators import timed
-from .projected_sse import get_squeeze_derivative_beta
+from .projected_sse import get_alpha_derivative_beta, get_squeeze_derivative_beta
 from .symbols import beta, eta_lambda, eta_m, eta_omega, mu, r, theta
 
 if TYPE_CHECKING:
@@ -38,12 +38,12 @@ def get_squeeze_derivative_R() -> sp.Expr:
     beta_from_R = sp.solve(R_from_beta - R, sp.conjugate(beta))[0]
     subbed = squeeze_derivative.subs({sp.conjugate(beta): beta_from_R})
     mu_squared_from_beta = 1 / (1 - beta * sp.conjugate(beta))
-    mu_from_r = mu_squared_from_beta.subs(
+    mu_squared_from_r = mu_squared_from_beta.subs(
         {sp.conjugate(beta): beta_from_R, beta: sp.conjugate(beta_from_R)}
     )
-    numer, denom = sp.together(mu_from_r).as_numer_denom()
-    mu_from_r = sp.simplify(numer) / sp.factor(sp.simplify(denom))
-    return sp.together(sp.simplify(subbed)).subs({mu**2: mu_from_r})
+    numer, denom = sp.together(mu_squared_from_r).as_numer_denom()
+    mu_squared_from_r = sp.simplify(numer) / sp.factor(sp.simplify(denom))
+    return sp.together(sp.simplify(subbed)).subs({mu**2: mu_squared_from_r})
 
 
 @cache
@@ -124,12 +124,12 @@ uncertainty_x = (
     sp.Pow(sp.cosh(r), 2)
     + sp.Pow(sp.sinh(r), 2)
     - 2 * sp.cosh(r) * sp.sinh(r) * sp.cos(theta)
-) / 4
+) / 2
 uncertainty_p = (
     sp.Pow(sp.cosh(r), 2)
     + sp.Pow(sp.sinh(r), 2)
     + 2 * sp.cosh(r) * sp.sinh(r) * sp.cos(theta)
-) / 4
+) / 2
 uncertainty = uncertainty_x * uncertainty_p
 
 
@@ -200,3 +200,17 @@ def get_uncertainty_p_R() -> sp.Expr:
     return uncertainty_R.subs(
         {R * sp.conjugate(R): sp.Abs(R) ** 2, sp.conjugate(R): 2 * sp.re(R) - R}
     )
+
+
+def get_classical_alpha_derivative() -> sp.Expr:
+    classical_R = sp.limit(get_equilibrium_squeeze_R(), eta_lambda, 0)
+    beta_from_R = sp.solve(R_from_beta - R, beta)[0]
+    classical_beta = sp.simplify(beta_from_R.subs({R: classical_R}))
+    mu_squared_from_beta = 1 / (1 - beta * sp.conjugate(beta))
+
+    alpha_derivative = (
+        get_alpha_derivative_beta()
+        .subs({mu: sp.sqrt(mu_squared_from_beta)})
+        .subs({beta: classical_beta})
+    )
+    return sp.simplify(alpha_derivative)
