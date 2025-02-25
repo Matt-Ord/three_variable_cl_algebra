@@ -57,6 +57,33 @@ def assert_elena_sigma_0() -> None:
     assert sp.simplify(uncertainty_x - (sigma_0**2 / 2)) == 0
 
 
+def assert_periodic_width() -> None:
+    x = sp.Symbol("x", real=True)
+    k = sp.Symbol("k", real=True)
+    sigma_0 = sp.Symbol("sigma_0", real=True, positive=True)
+    wavefunction = sp.exp(-(sp.Abs(x) ** 2) / (2 * sigma_0**2))
+    norm = sp.integrate(sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
+    wavefunction /= sp.sqrt(norm)
+    periodic_x = sp.integrate(
+        sp.exp(sp.I * k * x) * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo)
+    )
+    sp.print_latex(sp.simplify(periodic_x))
+
+    x_squared = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
+    sp.print_latex(sp.simplify(x_squared))
+
+
+assert_periodic_width()
+
+
+def get_sigma_0_coherent(params: BaseParameters) -> float:
+    return np.sqrt(2 * params.eta_parameters.eta_omega / params.eta_parameters.eta_m)
+
+
+def get_sigma_0_free(params: BaseParameters) -> float:
+    return np.sqrt(2 * (np.sqrt(2) - 1) / 4 * params.eta_parameters.eta_m)
+
+
 if __name__ == "__main__":
     low_temperatures = [10, 50, 100, 200, 300, 400, 500, 600, 700, 900]
     high_temperatures = [1000, 1200, 1500, 1700, 2000, 3000, 4000, 5000, 6000]
@@ -64,19 +91,29 @@ if __name__ == "__main__":
 
     params = ELENA_NA_CU.base_parameters
     data = [params.with_temperature(temperature) for temperature in temperatures]
-    widths_sse = [get_sigma_0(params) for params in data]
-    print([f"{w:0.2e}" for w in widths_sse])
+    widths_sse_formula = [get_sigma_0(params) for params in data]
+    print([f"{w:0.2e}" for w in widths_sse_formula])
+
+    widths_coherent = [get_sigma_0_coherent(params) for params in data]
+    print([f"{w:0.2e}" for w in widths_coherent])
+    widths_free = [get_sigma_0_free(params) for params in data]
+    print([f"{w:0.2e}" for w in widths_free])
 
     params = ELENA_NA_CU_BALLISTIC.base_parameters
     data = [params.with_temperature(temperature) for temperature in temperatures]
-    widths_coherent = [get_sigma_0(params) for params in data]
-    print([f"{w:0.2e}" for w in widths_coherent])
+    widths_ballistic_formula = [get_sigma_0(params) for params in data]
+    print([f"{w:0.2e}" for w in widths_ballistic_formula])
 
     fig, ax = util.get_figure()
-    (line,) = ax.plot(temperatures, widths_sse)
-    line.set_label("SSE")
+    (line,) = ax.plot(temperatures, widths_sse_formula)
+    line.set_label("SSE Formula")
+    (line,) = ax.plot(temperatures, widths_ballistic_formula)
+    line.set_label("Ballistic Formula")
     (line,) = ax.plot(temperatures, widths_coherent)
-    line.set_label("Coherent")
+    line.set_label("Coherent Widths")
+    # (line,) = ax.plot(temperatures, widths_free)
+    # line.set_label("Free Widths")
+    ax.set_ylim(0, None)
 
     ax.set_xlabel("Temperature / K")
     ax.set_ylabel("Width / m")
