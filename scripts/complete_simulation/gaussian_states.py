@@ -1,48 +1,27 @@
 from __future__ import annotations
 
 import numpy as np
-from adsorbate_simulation.constants.system import DIMENSIONLESS_1D_SYSTEM
 from adsorbate_simulation.simulate import run_stochastic_simulation
-from adsorbate_simulation.system import (
-    CaldeiraLeggettEnvironment,
-    HarmonicCoherentInitialState,
-    HarmonicPotential,
-    IsotropicSimulationConfig,
-    PositionSimulationBasis,
-    SimulationCondition,
-)
 from adsorbate_simulation.util import (
     EtaParameters,
     spaced_time_basis,
 )
-from scipy.constants import Boltzmann, hbar  # type: ignore library
+from scipy.constants import hbar  # type: ignore library
 from slate import metadata, plot
 from slate_quantum import operator
 
+from three_variable.physical_systems import TOWNSEND_H_RU
+from three_variable.simulation import get_condition_from_params
+
 if __name__ == "__main__":
-    # Gaussian states are a common choice for initial state
-    # but what distribution of p,x,sigma should we choose?
-    # For a consistent choice, we can run a simulation
-    # and fit the resulting states to a Gaussian.
-    system = DIMENSIONLESS_1D_SYSTEM.with_potential(
-        HarmonicPotential(frequency=20 / hbar)
+    eta_omega, eta_lambda = 0.5, 40.0
+    eta_omega, eta_lambda = (
+        TOWNSEND_H_RU.eta_parameters.eta_omega,
+        TOWNSEND_H_RU.eta_parameters.eta_lambda,
     )
-    condition = SimulationCondition(
-        system,
-        IsotropicSimulationConfig(
-            simulation_basis=PositionSimulationBasis(
-                shape=(1,),
-                resolution=(300,),
-                offset=((300 - 200) // 2,),
-                truncation=(200,),
-            ),
-            environment=CaldeiraLeggettEnvironment(_eta=2 / (hbar * 2**2)),
-            temperature=10 / Boltzmann,
-            target_delta=0.2e-3,
-            initial_state=HarmonicCoherentInitialState(),
-        ),
-    )
-    times = spaced_time_basis(n=100, dt=0.01 * np.pi * hbar)
+    # eta_omega, eta_lambda = 0.5, 40.0
+    condition = get_condition_from_params(eta_omega, eta_lambda, mass=1)
+    times = spaced_time_basis(n=100, dt=0.1 * np.pi * hbar)
     states = run_stochastic_simulation(condition, times)
 
     # Using the e^{ikx} operator, we can calculate the position
@@ -67,6 +46,13 @@ if __name__ == "__main__":
     # We can also calculate the width of the wavepacket
     # This remains almost constant over the course of the simulation.
     params = EtaParameters.from_condition(condition)
+    print(params.eta_m, params.eta_omega, params.eta_lambda)
+    print("", eta_omega, eta_lambda)
+    params = EtaParameters(
+        eta_m=params.eta_m,
+        eta_omega=np.sqrt(2 / 3) * params.eta_omega,
+        eta_lambda=params.eta_lambda,
+    )
     theoretical = params.get_variance_x()
     widths = operator.measure.all_variance_x(states, axis=0)
     fig, ax, line = plot.array_against_basis(widths, measure="real")
@@ -88,7 +74,6 @@ if __name__ == "__main__":
     fig.show()
 
     # Similarly the uncertainty
-    params = EtaParameters.from_condition(condition)
     theoretical = np.sqrt(params.get_uncertainty() / hbar**2)
     widths = operator.measure.all_uncertainty(states, axis=0)
     fig, ax, line = plot.array_against_basis(widths, measure="real")

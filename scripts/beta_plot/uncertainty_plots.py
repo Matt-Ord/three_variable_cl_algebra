@@ -26,6 +26,10 @@ PHYSICAL_PARAMS = [
     ("Li Cu", ELENA_LI_CU.eta_parameters, "C1"),
     ("Na Cu", ELENA_NA_CU.eta_parameters, "C2"),
 ]
+print("Omega      | m          | lambda        ")
+print(f"{TOWNSEND_H_RU.omega:0.3e}", TOWNSEND_H_RU.m, f"{TOWNSEND_H_RU.lambda_:0.3e}")
+print(f"{ELENA_LI_CU.omega:0.3e}", ELENA_LI_CU.m, f"{ELENA_LI_CU.lambda_:0.3e}")
+print(f"{ELENA_NA_CU.omega:0.3e}", ELENA_NA_CU.m, f"{ELENA_NA_CU.lambda_:0.3e}")
 
 
 def plot_beta_against_m_w() -> None:

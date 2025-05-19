@@ -20,6 +20,11 @@ dependencies = [
     "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@4d575eb",
 ]
 
+[tool.uv]
+override-dependencies = [
+    "sse_solver@ git+https://github.com/Matt-Ord/sse_solver@52228b0#subdirectory=sse_solver_py",
+]
+
 [tool.ruff]
 unsafe-fixes = true
 exclude = [".git", ".git-rewrite", ".vscode"]
