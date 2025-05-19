@@ -59,6 +59,10 @@ class ElenaParameters:
     def eta_parameters(self) -> EtaParameters:
         return self.base_parameters.eta_parameters
 
+    @property
+    def omega(self) -> float:
+        return self.base_parameters.omega
+
 
 NA_MASS = 22.990 * atomic_mass
 LI_MASS = 6.94 * atomic_mass

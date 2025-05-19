@@ -1,18 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
-from adsorbate_simulation.constants.system import DIMENSIONLESS_1D_SYSTEM
 from adsorbate_simulation.simulate import run_stochastic_simulation
-from adsorbate_simulation.system import (
-    CaldeiraLeggettEnvironment,
-    HarmonicPotential,
-    IsotropicSimulationConfig,
-    PositionSimulationBasis,
-    SimulationCondition,
-)
-from adsorbate_simulation.system._config import HarmonicCoherentInitialState
 from adsorbate_simulation.util import spaced_time_basis
-from scipy.constants import Boltzmann, hbar  # type: ignore libary
+from scipy.constants import hbar  # type: ignore libary
 from slate import basis, plot
 from slate.plot import (
     animate_data_over_list_1d_k,
@@ -20,30 +11,16 @@ from slate.plot import (
 )
 from slate_quantum import dynamics, state
 
-if __name__ == "__main__":
-    # This is a simple example of simulating a harmonic system using the
-    # caldeira leggett model.
-    # This example simulates an plots a single stochastic realization as
-    # calculated under the stochastic Schrodinger equation.
-    system = DIMENSIONLESS_1D_SYSTEM.with_potential(
-        HarmonicPotential(frequency=20 / hbar)
-    )
-    condition = SimulationCondition(
-        system,
-        IsotropicSimulationConfig(
-            simulation_basis=PositionSimulationBasis(
-                shape=(1,),
-                resolution=(100,),
-                offset=((100 - 80) // 2,),
-                truncation=(80,),
-            ),
-            environment=CaldeiraLeggettEnvironment(_eta=3 / (hbar * 2**2)),
-            temperature=10 / Boltzmann,
-            target_delta=1e-3,
-            initial_state=HarmonicCoherentInitialState(),
-        ),
-    )
+from three_variable.physical_systems import TOWNSEND_H_RU
+from three_variable.simulation import get_condition_from_params
 
+if __name__ == "__main__":
+    eta_omega, eta_lambda = (
+        TOWNSEND_H_RU.eta_parameters.eta_omega,
+        TOWNSEND_H_RU.eta_parameters.eta_lambda,
+    )
+    eta_omega, eta_lambda = 0.5, 40.0
+    condition = get_condition_from_params(eta_omega, eta_lambda, mass=1)
     # We simulate the system using the stochastic Schrodinger equation.
     # We find a localized stochastic evolution of the wavepacket.
     times = spaced_time_basis(n=100, dt=0.1 * np.pi * hbar)
@@ -52,12 +29,27 @@ if __name__ == "__main__":
 
     # We start the system in a gaussian state, centered at the origin.
     fig, ax, _ = plot.array_against_axes_1d(states[0, :], measure="abs")
+    line = ax.axvline(1 / 6 * states.basis.metadata()[1][0].delta)
+    line.set_color("black")
+    line = ax.axvline(5 / 6 * states.basis.metadata()[1][0].delta)
+    line.set_color("black")
+    ax.set_xlim(0, states.basis.metadata()[1][0].delta)
     ax.set_title("Initial State - A Gaussian Wavepacket Centered at the Origin")
     fig.show()
 
     fig, ax, anim0 = animate_data_over_list_1d_x(states, measure="abs")
+    ax.set_title("Stochastic Evolution of the Wavepacket")
+    ax.set_xlabel("Position (a.u.)")
+    ax.set_ylabel("Probability")
+    line = ax.axvline(1 / 6 * states.basis.metadata()[1][0].delta)
+    line.set_color("black")
+    line = ax.axvline(5 / 6 * states.basis.metadata()[1][0].delta)
+    line.set_color("black")
     fig.show()
     fig, ax, anim1 = animate_data_over_list_1d_k(states, measure="abs")
+    ax.set_title("Stochastic Evolution of the Wavepacket in k-space")
+    ax.set_xlabel("Momentum (a.u.)")
+    ax.set_ylabel("Probability")
     fig.show()
 
     # Check that the states are normalized - this is an easy way to check that

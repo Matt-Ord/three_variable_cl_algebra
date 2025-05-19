@@ -46,13 +46,29 @@
 					{
 						"name": "scipy",
 						"depth": 2
+					},
+					{
+						"name": "slate",
+						"depth": 3
+					},
+					{
+						"name": "slate_core",
+						"depth": 3
+					},
+					{
+						"name": "slate_quantum",
+						"depth": 3
+					},
+					{
+						"name": "adsorbate_simulation",
+						"depth": 3
 					}
 				],
 				"python.testing.unittestEnabled": false,
 				"python.testing.pytestEnabled": true,
 				"python.analysis.diagnosticMode": "workspace",
 				"python.analysis.include": [
-					"slate"
+					"three_variable"
 				],
 				"python.analysis.autoImportCompletions": true,
 				"cSpell.allowCompoundWords": true,
