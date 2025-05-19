@@ -15,11 +15,16 @@ dependencies = [
     "numpy>=2.2.2",
     "scipy>=1.15.1",
     "sympy @ git+https://github.com/Matt-Ord/sympy.git@86e1079b602ffb85bcf7eb19faa1d9ef8d9ad492",
+    "slate[plot] @ git+https://github.com/Matt-Ord/slate.git@f5af344",
+    "slate_quantum[sse_solver_py,plot] @ git+https://github.com/Matt-Ord/slate_quantum.git@166caef",
+    "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@4d575eb",
 ]
 
 [tool.ruff]
 unsafe-fixes = true
 exclude = [".git", ".git-rewrite", ".vscode"]
+fixable = ["ALL"]
+unfixable = ["T201"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -37,7 +42,6 @@ ignore = [
     "DOC201",
     "DOC402",
     "PD",
-    "T201",
     "D104",
 ]
 
@@ -80,6 +84,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
-dev = [
-    "pytest>=8.3.4",
-]
+dev = ["pytest>=8.3.4"]

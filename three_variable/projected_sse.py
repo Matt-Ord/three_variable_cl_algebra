@@ -341,9 +341,60 @@ def get_alpha_derivative_stochastic_beta() -> sp.Expr:
     return sp.factor_terms(subbed)
 
 
+def get_alpha_derivative() -> sp.Expr:
+    return (
+        get_alpha_derivative_system()
+        + get_alpha_derivative_environment()
+        + get_alpha_derivative_stochastic()
+    )
+
+
 def get_alpha_derivative_beta() -> sp.Expr:
-    return sp.factor_terms(
+    return (
         get_alpha_derivative_system_beta()
         + get_alpha_derivative_environment_beta()
         + get_alpha_derivative_stochastic_beta()
     )
+
+
+def get_x_derivative_classical() -> sp.Expr:
+    x_operator = get_x_operator(0)
+    p_operator = get_p_operator(0)
+    vaccum = FockStateBosonKet([0])
+    classical_x = apply_operators(Dagger(vaccum) * x_operator * vaccum)
+    classical_p = apply_operators(Dagger(vaccum) * p_operator * vaccum)
+
+    solution = sp.solve(
+        [sp.Eq(sp.Symbol("x"), classical_x), sp.Eq(sp.Symbol("p"), classical_p)],
+        (alpha, sp.conjugate(alpha)),
+    )
+    solution = {
+        k: sp.expand(sp.simplify(v.subs({mu**2: 1 + nu * sp.conjugate(nu)})))
+        for k, v in solution.items()
+    }
+
+    derivative_alpha = get_alpha_derivative()
+    sp.print_latex(classical_x)
+
+    x_derivative = sp.expand(
+        sp.expand(
+            classical_x.subs(
+                {
+                    alpha: derivative_alpha,
+                    sp.conjugate(alpha): sp.conjugate(derivative_alpha),
+                }
+            )
+        ).subs({mu**2: 1 + nu * sp.conjugate(nu)})
+    )
+    sp.print_latex(solution)
+    return sp.simplify(x_derivative.subs(solution))
+    Q = sp.symbols("Q")
+    return sp.expand(x_derivative.subs({alpha: sp.conjugate(alpha) + Q}))
+    factor_1 = (
+        alpha * mu
+        + alpha * sp.conjugate(mu)
+        - mu * sp.conjugate(alpha)
+        - nu * sp.conjugate(alpha)
+    )
+    sp.simplify(factor_1.subs(solution))
+    return sp.simplify(x_derivative.subs(solution))

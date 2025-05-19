@@ -10,6 +10,7 @@ from three_variable.projected_sse import (
     get_squeeze_derivative_beta,
     get_squeeze_derivative_environment_beta,
     get_squeeze_derivative_system_beta,
+    get_x_derivative_classical,
 )
 
 print("Alpha derivative")
@@ -20,6 +21,8 @@ print()
 sp.print_latex(get_alpha_derivative_stochastic_beta())
 print()
 
+print("Full Alpha derivative")
+sp.print_latex(get_x_derivative_classical())
 
 print("Squeeze derivative")
 sp.print_latex(get_squeeze_derivative_system_beta())
@@ -31,4 +34,3 @@ print("Full Squeeze derivative")
 sp.print_latex(get_squeeze_derivative_beta())
 print()
 sp.print_latex(get_squeeze_derivative_R())
-input()

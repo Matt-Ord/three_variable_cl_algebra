@@ -11,6 +11,9 @@
 		"ghcr.io/va-h/devcontainers-features/uv:1": {
 			"shellautocompletion": true,
 			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "latest"
 		}
 	},
 	"customizations": {
