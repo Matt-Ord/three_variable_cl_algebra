@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sympy.physics.quantum import Commutator
+from sympy.physics.units import hbar
 
 from tests.util import expression_equals
 from three_variable.symbols import (
@@ -13,6 +14,8 @@ from three_variable.symbols import (
     k_minus_expr,
     k_plus,
     k_plus_expr,
+    p_expr,
+    x_expr,
 )
 
 
@@ -38,6 +41,14 @@ def test_commutators_heisenburg() -> None:
 
     commutator = Commutator(a_expr, a_dagger_expr).doit()  # type: ignore[no-untyped-call]
     assert expression_equals(formula_from_expr(commutator), 1)
+
+
+def test_commutators_x() -> None:
+    # The commutators of x, p must match the Heisenberg algebra
+    # [x, p] = i * hbar <- this ...
+
+    commutator = Commutator(x_expr, p_expr).doit()  # type: ignore[no-untyped-call]
+    assert expression_equals(formula_from_expr(commutator), 1j * hbar)
 
 
 def test_commutators_jacobi() -> None:

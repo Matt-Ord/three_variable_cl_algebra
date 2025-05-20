@@ -19,15 +19,18 @@ expr_system = sp.simplify(get_system_derivative("zeta"))
 print("System derivative:")
 sp.print_latex(expr_system)
 expr_r_system = sp.factor(squeeze_ratio_from_zeta_expr(expr_system))
+print("System derivative (R):")
 sp.print_latex(expr_r_system)
 
 expr_environment = get_environment_derivative("zeta")
 print("Environment derivative:")
 sp.print_latex(expr_environment)
 expr_r_environment = sp.factor(squeeze_ratio_from_zeta_expr(expr_environment))
+print("Environment derivative (R):")
 sp.print_latex(expr_r_environment)
 
 expr_r_full = sp.factor_terms(
     (-1j / hbar) * expr_r_system - expr_r_environment, fraction=True
 )
-sp.print_latex(expr_r_full)
+print("Full derivative (R):")
+sp.print_latex(sp.nsimplify(expr_r_full, rational=True))
