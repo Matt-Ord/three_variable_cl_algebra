@@ -18,6 +18,16 @@ _eta_omega_symbol = eta_omega
 _eta_lambda_symbol = eta_lambda
 
 
+@cache
+def get_squeeze_derivative_gradient_beta() -> sp.Expr:
+    temp = sp.Symbol("temp")
+    squeeze_derivative = get_()
+    gradient = sp.diff(squeeze_derivative.subs({sp.conjugate(beta): temp}), temp).subs(
+        {temp: sp.conjugate(beta)}
+    )
+    return sp.simplify(gradient)
+
+
 def evaluate_equilibrium_squeeze_derivative_gradient(
     eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
     eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],

@@ -34,7 +34,7 @@ def timed[**P, R](f: Callable[P, R]) -> Callable[P, R]:
             result = f(*args, **kw)
         finally:
             te = datetime.datetime.now(tz=datetime.UTC)
-            print(f"func: {f.__name__} took: {(te - ts).total_seconds()} sec")
+            print(f"func: {f.__name__} took: {(te - ts).total_seconds()} sec")  # noqa: T201
         return result
 
     return wrap  # type: ignore[return-value]

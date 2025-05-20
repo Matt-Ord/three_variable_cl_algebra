@@ -7,14 +7,15 @@ from scipy.constants import angstrom
 from three_variable import util
 from three_variable.equilibrium_squeeze import (
     R,
-    evaluate_equilibrium_R,
-    get_uncertainty_x_R,
+    evaluate_equilibrium_r,
+    get_uncertainty_x_r,
 )
 from three_variable.physical_systems import (
     ELENA_NA_CU,
     ELENA_NA_CU_BALLISTIC,
     BaseParameters,
 )
+from three_variable.util import print_latex
 
 
 def evaluate_equilibrium_uncertainty_x(
@@ -24,12 +25,12 @@ def evaluate_equilibrium_uncertainty_x(
     *,
     positive: bool = False,
 ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
-    equilibrium_R = evaluate_equilibrium_R(  # noqa: N806
+    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
         eta_m, eta_omega, eta_lambda, positive=positive
     )
-    # sp.print_latex(get_equilibrium_squeeze_R(positive=positive))
-    # sp.print_latex(get_uncertainty_x_R())
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_R())
+    # print_latex(get_equilibrium_squeeze_r(positive=positive))
+    # print_latex(get_uncertainty_x_r())
+    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_r())
     return np.real_if_close(uncertainty_from_R(equilibrium_R))
 
 
@@ -67,10 +68,10 @@ def assert_periodic_width() -> None:
     periodic_x = sp.integrate(
         sp.exp(sp.I * k * x) * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo)
     )
-    sp.print_latex(sp.simplify(periodic_x))
+    print_latex(sp.simplify(periodic_x))
 
     x_squared = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
-    sp.print_latex(sp.simplify(x_squared))
+    print_latex(sp.simplify(x_squared))
 
 
 assert_periodic_width()

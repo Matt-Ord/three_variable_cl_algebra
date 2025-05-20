@@ -2,18 +2,32 @@ from __future__ import annotations
 
 import pytest
 import sympy as sp
+from sympy.physics.units import hbar
 
-from three_variable.new_paper.projected_sse import (
+from tests.util import expression_equals
+from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
     zeta_from_squeeze_ratio_expr,
 )
-from three_variable.new_paper.symbols import (
+from three_variable.symbols import (
+    a_dagger_expr,
+    a_expr,
     dimensionless_from_full,
+    expr_from_formula,
+    formula_from_expr,
     full_from_dimensionless,
+    k_0,
+    k_0_expr,
+    k_minus,
+    k_minus_expr,
+    k_plus,
+    k_plus_expr,
     lambda_,
     m,
     omega,
+    p_expr,
+    x_expr,
     zeta,
 )
 
@@ -44,4 +58,35 @@ def test_conversion_ratio() -> None:
             zeta - zeta_from_squeeze_ratio_expr(squeeze_ratio_from_zeta_expr(zeta))
         )
         == 0
+    )
+
+
+@pytest.mark.parametrize(
+    ("expr"),
+    [a_dagger_expr, a_expr, k_0_expr, k_minus_expr, k_plus_expr],
+)
+def test_conversion_formula_simple(expr: sp.Expr) -> None:
+    assert expression_equals(
+        expr_from_formula(formula_from_expr(expr)),
+        expr,
+    )
+
+
+def test_conversion_formula() -> None:
+    assert expression_equals(
+        formula_from_expr(2 * x_expr**2),
+        formula_from_expr(
+            a_expr**2 + a_dagger_expr**2 + 1 + 2 * a_dagger_expr * a_expr
+        ),
+    )
+    assert expression_equals(formula_from_expr(x_expr**2), k_plus + k_minus + 2 * k_0)
+
+    assert expression_equals(
+        formula_from_expr(2 * p_expr**2 / hbar**2),
+        formula_from_expr(
+            -(a_expr**2) - a_dagger_expr**2 + 1 + 2 * a_dagger_expr * a_expr
+        ),
+    )
+    assert expression_equals(
+        formula_from_expr(p_expr**2 / hbar**2), -k_plus - k_minus + 2 * k_0
     )

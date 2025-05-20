@@ -62,6 +62,10 @@
 					{
 						"name": "adsorbate_simulation",
 						"depth": 3
+					},
+					{
+						"name": "three_variable",
+						"depth": 3
 					}
 				],
 				"python.testing.unittestEnabled": false,
