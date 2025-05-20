@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 import sympy as sp
+from sympy.physics.units import hbar
 
 from tests.util import expression_equals
 from three_variable.coherent_states import (
@@ -23,6 +24,8 @@ from three_variable.symbols import (
     k_0_expr,
     k_minus_expr,
     k_plus_expr,
+    p_expr,
+    x_expr,
     zeta,
 )
 
@@ -39,6 +42,14 @@ def expectation_from_expr_test(action: sp.Expr) -> sp.Expr:
         (k_plus_expr, get_expectation_k_plus()),
         (k_0_expr, get_expectation_k_0()),
         (k_minus_expr, get_expectation_k_minus()),
+        (x_expr, (get_expectation_a() + get_expectation_a_dagger()) / sp.sqrt(2)),
+        (
+            p_expr,
+            -1j
+            * hbar
+            * (get_expectation_a() - get_expectation_a_dagger())
+            / sp.sqrt(2),
+        ),
     ],
 )
 def test_expectation_from_action(expr: sp.Expr, expectation: sp.Expr) -> None:

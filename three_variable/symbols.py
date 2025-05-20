@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import cast
 
 import sympy as sp
-from sympy.physics.quantum import Dagger  # type: ignore sp
-from sympy.physics.quantum.boson import BosonOp  # type: ignore sp
-from sympy.physics.quantum.operatorordering import (  # type: ignore sp
-    normal_ordered_form,  # type: ignore sp
+from sympy.physics.quantum import Dagger
+from sympy.physics.quantum.boson import BosonOp
+from sympy.physics.quantum.operatorordering import (
+    normal_ordered_form,
 )
 from sympy.physics.units import hbar
 
@@ -36,21 +36,21 @@ omega_from_eta_omega = sp.Mul(KBT, sp.Pow(sp.Mul(hbar, eta_omega), -1))
 
 def dimensionless_from_full(expr: sp.Expr) -> sp.Expr:
     """Convert the full expression to dimensionless form."""
-    return expr.subs(  # type: ignore sp
+    return expr.subs(
         {
             m: m_from_eta_m,
             lambda_: lambda_from_eta_lambda,
             omega: omega_from_eta_omega,
         }
-    )  # type: ignore sp
+    )
 
 
 def full_from_dimensionless(expr: sp.Expr) -> sp.Expr:
     """Convert the dimensionless expression to full form."""
-    eta_m_from_m = sp.solve(m_from_eta_m - m, eta_m)[0]  # type: ignore sp
-    eta_lambda_from_lambda = sp.solve(lambda_from_eta_lambda - lambda_, eta_lambda)[0]  # type: ignore sp
-    eta_omega_from_omega = sp.solve(omega_from_eta_omega - omega, eta_omega)[0]  # type: ignore sp
-    return expr.subs(  # type: ignore sp
+    eta_m_from_m = sp.solve(m_from_eta_m - m, eta_m)[0]
+    eta_lambda_from_lambda = sp.solve(lambda_from_eta_lambda - lambda_, eta_lambda)[0]
+    eta_omega_from_omega = sp.solve(omega_from_eta_omega - omega, eta_omega)[0]
+    return expr.subs(
         {
             eta_m: eta_m_from_m,
             eta_lambda: eta_lambda_from_lambda,
@@ -66,8 +66,8 @@ k_plus_expr = sp.Mul(0.5, sp.Pow(Dagger(a_expr), 2))  # type: ignore sp
 k_0_expr = sp.Mul(0.5, sp.Add(0.5, sp.Mul(Dagger(a_expr), a_expr)))  # type: ignore sp
 k_minus_expr = sp.Mul(0.5, sp.Pow(a_expr, 2))
 
-x_expr = sp.Mul(sp.Add(a_expr, a_dagger_expr), 1 / sp.sqrt(2))  # type: ignore sp
-p_expr = sp.Mul(-sp.I * hbar * (a_dagger_expr - a_expr), 1 / sp.sqrt(2))  # type: ignore sp
+x_expr = sp.Mul(sp.Add(a_expr, a_dagger_expr), 1 / sp.sqrt(2))
+p_expr = sp.Mul(-1j * hbar * (a_expr - a_dagger_expr), 1 / sp.sqrt(2))
 
 # The operators in symbol form
 k_plus = sp.Symbol("K_+", commutative=False)
@@ -77,13 +77,13 @@ k_minus = sp.Symbol("K_-", commutative=False)
 
 def formula_from_expr(expr: sp.Expr) -> sp.Expr:
     """Get the expression in terms of the five basic operators."""
-    expr = normal_ordered_form(sp.expand(expr))  # type: ignore sp
-    return sp.simplify(  # type: ignore sp
-        expr.subs(  # type: ignore sp
+    expr = normal_ordered_form(sp.expand(expr))
+    return sp.simplify(
+        expr.subs(
             {
-                Dagger(a_expr) * a_expr: (2 * k_0 - 0.5),  # type: ignore sp
-                Dagger(a_expr) ** 2: 2 * k_plus,  # type: ignore sp
-                a_expr**2: 2 * k_minus,  # type: ignore sp
+                Dagger(a_expr) * a_expr: (2 * k_0 - 0.5),
+                Dagger(a_expr) ** 2: 2 * k_plus,
+                a_expr**2: 2 * k_minus,
             }
         )
     )
@@ -91,7 +91,7 @@ def formula_from_expr(expr: sp.Expr) -> sp.Expr:
 
 def expr_from_formula(expr: sp.Expr) -> sp.Expr:
     """Get the full expression, in terms of only the bosonic creation operator a."""
-    return expr.subs(  # type: ignore sp
+    return expr.subs(
         {
             k_0: k_0_expr,
             k_plus: k_plus_expr,

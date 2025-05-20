@@ -14,7 +14,7 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numpy>=2.2.2",
     "scipy>=1.15.1",
-    "sympy @ git+https://github.com/Matt-Ord/sympy.git@ae968dc967b39a71abd0fd719e87c1206e480b08",
+    "sympy @ git+https://github.com/Matt-Ord/sympy.git@b9477edd09c48a029cb7cad4e16c346eaa1e7785",
     "slate[plot] @ git+https://github.com/Matt-Ord/slate.git@f5af344",
     "slate_quantum[sse_solver_py,plot] @ git+https://github.com/Matt-Ord/slate_quantum.git@166caef",
     "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@9b5722b",
@@ -28,10 +28,10 @@ override-dependencies = [
 [tool.ruff]
 unsafe-fixes = true
 exclude = [".git", ".git-rewrite", ".vscode"]
-fixable = ["ALL"]
-unfixable = ["T201"]
 
 [tool.ruff.lint]
+fixable = ["ALL"]
+unfixable = ["T201"]
 select = ["ALL"]
 preview = true
 ignore = [

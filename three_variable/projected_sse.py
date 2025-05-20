@@ -8,6 +8,8 @@ from slate.util import timed
 from sympy.physics.quantum import (
     Dagger,
 )
+from sympy.physics.quantum.operatorordering import normal_ordered_form
+from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
     action_from_expr,
@@ -21,7 +23,6 @@ from three_variable.symbols import (
     alpha,
     dimensionless_from_full,
     eta_m,
-    hbar,
     lambda_,
     m,
     m_from_eta_m,
@@ -40,7 +41,7 @@ def _get_lindblad_operator_raw() -> sp.Expr:
 
 def _get_lindblad_operator_simple() -> sp.Expr:
     return sp.sqrt(lambda_ / (4 * eta_m)) * (
-        (2 * eta_m + 1) * a_dagger_expr + (2 * eta_m - 1) * a_expr
+        (2 * eta_m - 1) * a_dagger_expr + (2 * eta_m + 1) * a_expr
     )
 
 
@@ -76,21 +77,9 @@ def get_drift_term() -> sp.Expr:
     )
 
 
-def _get_hamiltonian_shift_term_raw() -> sp.Expr:
-    return lambda_ * (x_expr * p_expr + p_expr * x_expr) / 2
-
-
-def _get_hamiltonian_shift_term_simple() -> sp.Expr:
-    return -1j * lambda_ * hbar * (a_dagger_expr**2 - a_expr**2) / 2
-
-
 def get_hamiltonian_shift_term() -> sp.Expr:
-    # Sanity check - does the raw and simple form of the hamiltonian shift term match?
-    # For this we need to be able to use normal ordering
-    raw = _get_hamiltonian_shift_term_raw()
-    simple = _get_hamiltonian_shift_term_simple()
-    assert sp.simplify(sp.expand(raw - simple)) == 0
-    return simple
+    shift = lambda_ * (x_expr * p_expr + p_expr * x_expr) / 2
+    return sp.simplify(normal_ordered_form(shift))
 
 
 def get_kinetic_term() -> sp.Expr:

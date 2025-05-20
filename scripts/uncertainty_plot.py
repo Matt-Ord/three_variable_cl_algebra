@@ -202,7 +202,6 @@ def plot_uncertainty_x_against_lambda_w() -> None:
         * eta_m
         / eta_omega_grid
     )
-    print(uncertainty)
 
     fig, ax = plot.get_figure()
 
