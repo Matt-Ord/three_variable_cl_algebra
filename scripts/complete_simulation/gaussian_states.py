@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import slate
 from adsorbate_simulation.simulate import run_stochastic_simulation
 from adsorbate_simulation.util import (
     EtaParameters,
@@ -10,6 +11,9 @@ from scipy.constants import hbar  # type: ignore library
 from slate import metadata, plot
 from slate_quantum import operator
 
+from three_variable.equilibrium_squeeze import (
+    evaluate_equilibrium_expect_x_squared,
+)
 from three_variable.physical_systems import TOWNSEND_H_RU
 from three_variable.simulation import get_condition_from_params
 
@@ -19,7 +23,7 @@ if __name__ == "__main__":
         TOWNSEND_H_RU.eta_parameters.eta_omega,
         TOWNSEND_H_RU.eta_parameters.eta_lambda,
     )
-    # eta_omega, eta_lambda = 0.5, 40.0
+    eta_omega, eta_lambda = 0.5, 40.0
     condition = get_condition_from_params(eta_omega, eta_lambda, mass=1)
     times = spaced_time_basis(n=100, dt=0.1 * np.pi * hbar)
     states = run_stochastic_simulation(condition, times)
@@ -54,7 +58,12 @@ if __name__ == "__main__":
         eta_lambda=params.eta_lambda,
     )
     theoretical = params.get_variance_x()
+    theoretical = evaluate_equilibrium_expect_x_squared(
+        params.eta_m, params.eta_omega, params.eta_lambda
+    )
+
     widths = operator.measure.all_variance_x(states, axis=0)
+    print(theoretical, slate.array.average(widths))
     fig, ax, line = plot.array_against_basis(widths, measure="real")
     line = ax.axhline(theoretical)
     line.set_color("red")

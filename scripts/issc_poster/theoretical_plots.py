@@ -10,9 +10,9 @@ from slate import plot
 
 from three_variable.equilibrium_squeeze import (
     R,
-    evaluate_equilibrium_R,
-    get_uncertainty_R,
-    get_uncertainty_x_R,
+    evaluate_equilibrium_r,
+    get_uncertainty_r,
+    get_uncertainty_x_r,
 )
 from three_variable.physical_systems import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
 
@@ -32,11 +32,11 @@ def evaluate_equilibrium_uncertainty(
     *,
     positive: bool = False,
 ) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-    equilibrium_R = evaluate_equilibrium_R(  # noqa: N806
+    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
         eta_m, eta_omega, eta_lambda, positive=positive
     )
 
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_R())
+    uncertainty_from_R = sp.lambdify((R), get_uncertainty_r())
     return np.real_if_close(uncertainty_from_R(equilibrium_R))
 
 
@@ -142,10 +142,10 @@ def evaluate_equilibrium_uncertainty_x(
     *,
     positive: bool = False,
 ) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-    equilibrium_R = evaluate_equilibrium_R(  # noqa: N806
+    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
         eta_m, eta_omega, eta_lambda, positive=positive
     )
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_R())
+    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_r())
     return np.real_if_close(uncertainty_from_R(equilibrium_R))
 
 

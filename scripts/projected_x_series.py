@@ -4,16 +4,14 @@ from __future__ import annotations
 
 import sympy as sp
 
-from three_variable.new_paper.coherent_states import (
+from three_variable.coherent_states import (
     action_from_expr,
     expectation_from_expr,
 )
-from three_variable.new_paper.projected_sse import (
+from three_variable.projected_sse import (
     get_x_polynomial,
-    p_expr,
-    x_expr,
 )
-from three_variable.new_paper.symbols import alpha, formula_from_expr
+from three_variable.symbols import alpha, formula_from_expr, p_expr, x_expr
 
 print("x operator")
 x_formula = formula_from_expr(x_expr)

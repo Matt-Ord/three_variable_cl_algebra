@@ -5,13 +5,15 @@ from typing import Literal
 import sympy as sp
 from sympy.physics.quantum import Dagger
 
-from three_variable.new_paper.symbols import (
+from three_variable.symbols import (
     a_expr,
     alpha,
     formula_from_expr,
     k_0,
     k_minus,
     k_plus,
+    p_expr,
+    x_expr,
     zeta,
 )
 
@@ -36,18 +38,18 @@ def complex_wirtinger_derivative(expr: sp.Expr, var: sp.Symbol) -> sp.Expr:
     re_var = sp.Symbol(f"re_{var.name}", real=True)
     im_var = sp.Symbol(f"im_{var.name}", real=True)
     subbed = expr.subs(sp.Abs(var) ** 2, var * sp.conjugate(var)).subs(
-        var, re_var + sp.I * im_var
+        var, re_var + 1j * im_var
     )
 
-    re_deriv = sp.Derivative(subbed, re_var).doit()
-    im_deriv = sp.Derivative(subbed, im_var).doit()
+    re_deriv = sp.Derivative(subbed, re_var).doit()  # type: ignore[no-untyped-call]
+    im_deriv = sp.Derivative(subbed, im_var).doit()  # type: ignore[no-untyped-call]
 
-    deriv = 0.5 * (re_deriv - sp.I * im_deriv)
+    deriv = 0.5 * (re_deriv - 1j * im_deriv)
     return sp.simplify(
         deriv.subs(
             {
                 re_var: 0.5 * (var + sp.conjugate(var)),
-                im_var: -sp.I * 0.5 * (var - sp.conjugate(var)),
+                im_var: -1j * 0.5 * (var - sp.conjugate(var)),
             }
         )
     )
@@ -89,7 +91,7 @@ def action_from_expr(expr: sp.Expr) -> sp.Expr:
 
 
 def extract_action(expr: sp.Expr, ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
-    expr = sp.collect(sp.expand(expr), [d_zeta, d_alpha])
+    expr = sp.collect(sp.expand(expr), [d_zeta, d_alpha])  # type: ignore[no-untyped-call]
     if ty == "zeta":
         return expr.coeff(d_zeta)
     if ty == "alpha":
@@ -172,3 +174,15 @@ def expectation_from_formula(expr: sp.Expr) -> sp.Expr:
 def expectation_from_expr(expr: sp.Expr) -> sp.Expr:
     """Get the expectation of an expression which is written in terms of the generators."""
     return expectation_from_formula(formula_from_expr(expr))
+
+
+expect_x = expectation_from_expr(x_expr)
+expect_x_squared = expectation_from_expr((x_expr - expect_x) ** 2)
+expect_x_squared = sp.simplify(expect_x_squared)
+
+expect_p = expectation_from_expr(p_expr)
+expect_p_squared = expectation_from_expr((p_expr - expect_p) ** 2)
+expect_p_squared = sp.simplify(expect_p_squared)
+
+uncertainty_squared = expect_p_squared * expect_x_squared
+uncertainty_squared = sp.factor(sp.expand(uncertainty_squared))
