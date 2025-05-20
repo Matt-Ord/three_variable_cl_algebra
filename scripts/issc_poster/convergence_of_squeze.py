@@ -40,8 +40,8 @@ if __name__ == "__main__":
     fig.show()
     fig.savefig(
         f"{Path(__file__).parent}/out/typical_squeeze_dynamics.png",
-        dpi=600,
-        facecolor="none",
+        dpi=600,  # type: ignore sp
+        facecolor="none",  # type: ignore sp
         transparent=True,
     )
 
@@ -58,8 +58,8 @@ if __name__ == "__main__":
     fig.show()
     fig.savefig(
         f"{Path(__file__).parent}/out/typical_width_dynamics.png",
-        dpi=600,
-        facecolor="none",
+        dpi=600,  # type: ignore sp
+        facecolor="none",  # type: ignore sp
         transparent=True,
     )
 

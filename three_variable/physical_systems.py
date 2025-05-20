@@ -3,7 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.constants import Boltzmann, angstrom, atomic_mass, electron_volt, hbar
+from scipy.constants import (  # type: ignore scipy
+    Boltzmann,
+    angstrom,
+    atomic_mass,
+    electron_volt,
+    hbar,
+)
 
 
 @dataclass

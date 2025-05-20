@@ -5,7 +5,7 @@ from functools import cache
 
 import numpy as np
 import sympy as sp
-from scipy.constants import hbar as hbar_value
+from scipy.constants import hbar as hbar_value  # type: ignore scipy
 from slate.util import timed
 from sympy.physics.units import hbar
 
@@ -57,12 +57,12 @@ _eta_lambda_symbol = eta_lambda
 
 
 def evaluate_equilibrium_squeeze_ratio(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
+    eta_m: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_omega: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
     positive: bool = True,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
+) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
     expression = get_equilibrium_squeeze_ratio(positive=positive)
     expression = expression.subs({hbar: hbar_value})
     expression_lambda = sp.lambdify(
@@ -72,12 +72,12 @@ def evaluate_equilibrium_squeeze_ratio(
 
 
 def evaluate_equilibrium_uncertainty(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
+    eta_m: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_omega: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
     positive: bool = True,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
+) -> np.ndarray[tuple[int, ...], np.dtype[np.complexfloating]]:
     equilibrium_R = evaluate_equilibrium_squeeze_ratio(  # noqa: N806
         eta_m, eta_omega, eta_lambda, positive=positive
     )
@@ -91,16 +91,16 @@ def evaluate_equilibrium_uncertainty(
         }
     )
     uncertainty_from_ratio = sp.lambdify((squeeze_ratio), ratio_formula)
-    return np.real_if_close(uncertainty_from_ratio(equilibrium_R))
+    return np.real_if_close(uncertainty_from_ratio(equilibrium_R))  # type: ignore[no-untyped-call]
 
 
 def evaluate_equilibrium_expect_x_squared(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
+    eta_m: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_omega: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
+    eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
     positive: bool = True,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
+) -> np.ndarray[tuple[int, ...], np.dtype[np.complexfloating]]:
     equilibrium_R = evaluate_equilibrium_squeeze_ratio(  # noqa: N806
         eta_m, eta_omega, eta_lambda, positive=positive
     )
@@ -114,4 +114,4 @@ def evaluate_equilibrium_expect_x_squared(
     )
 
     uncertainty_from_ratio = sp.lambdify((squeeze_ratio), ratio_formula)
-    return np.real_if_close(uncertainty_from_ratio(equilibrium_R))
+    return np.real_if_close(uncertainty_from_ratio(equilibrium_R))  # type: ignore[no-untyped-call]

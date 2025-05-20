@@ -40,14 +40,14 @@ ax.set_xlim(0, states.basis.metadata()[1][0].delta)
 ax.set_ylabel("Occupation")
 ax.set_xlabel("Position (/m)")
 ax1.set_ylabel("Potential (/J)")
-ax.legend(handles=[line1, line0])
+ax.legend(handles=[line1, line0])  # type: ignore sp
 fig.set_size_inches(6, 6)
 fig.tight_layout()
 fig.show()
 fig.savefig(
     f"{Path(__file__).parent}/out/typical_state.png",
-    dpi=600,
-    facecolor="none",
+    dpi=600,  # type: ignore sp
+    facecolor="none",  # type: ignore sp
     transparent=True,
 )
 

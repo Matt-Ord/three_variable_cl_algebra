@@ -65,6 +65,8 @@ fig.set_size_inches(6, 4.5)
 fig.set_size_inches(8, 6)
 fig.show()
 fig.savefig(
-    f"{Path(__file__).parent}/out/wigner_function.png", dpi=600, facecolor="none"
+    f"{Path(__file__).parent}/out/wigner_function.png",
+    dpi=600,  # type: ignore sp
+    facecolor="none",  # type: ignore sp
 )
 wait_for_close()

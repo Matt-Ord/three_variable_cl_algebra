@@ -2,36 +2,15 @@ from __future__ import annotations
 
 import numpy as np
 import sympy as sp
-from scipy.constants import angstrom
+from scipy.constants import angstrom  # type: ignore sp
+from slate import plot
 
-from three_variable import util
-from three_variable.equilibrium_squeeze import (
-    R,
-    evaluate_equilibrium_r,
-    get_uncertainty_x_r,
-)
+from three_variable.equilibrium_squeeze import evaluate_equilibrium_expect_x_squared
 from three_variable.physical_systems import (
     ELENA_NA_CU,
     ELENA_NA_CU_BALLISTIC,
     BaseParameters,
 )
-from three_variable.util import print_latex
-
-
-def evaluate_equilibrium_uncertainty_x(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
-    *,
-    positive: bool = False,
-) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
-    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
-        eta_m, eta_omega, eta_lambda, positive=positive
-    )
-    # print_latex(get_equilibrium_squeeze_r(positive=positive))
-    # print_latex(get_uncertainty_x_r())
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_r())
-    return np.real_if_close(uncertainty_from_R(equilibrium_R))
 
 
 def get_sigma_0(params: BaseParameters) -> float:
@@ -39,10 +18,10 @@ def get_sigma_0(params: BaseParameters) -> float:
     # Equal to sqrt( expect(x) - expect(x)^2 )
     return np.sqrt(
         2
-        * evaluate_equilibrium_uncertainty_x(
-            np.array([eta.eta_m]),
-            np.array([eta.eta_omega]),
-            np.array([eta.eta_lambda]),
+        * evaluate_equilibrium_expect_x_squared(
+            np.array([eta.eta_m]),  # type: ignore sp
+            np.array([eta.eta_omega]),  # type: ignore sp
+            np.array([eta.eta_lambda]),  # type: ignore sp
         ).item(0)
     )
 
@@ -51,11 +30,11 @@ def assert_elena_sigma_0() -> None:
     x = sp.Symbol("x", real=True)
     sigma_0 = sp.Symbol("sigma_0", real=True, positive=True)
     wavefunction = sp.exp(-(sp.Abs(x) ** 2) / (2 * sigma_0**2))
-    norm = sp.integrate(sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
-    wavefunction /= sp.sqrt(norm)
-    uncertainty_x = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
+    norm = sp.integrate(sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))  # type: ignore sp
+    wavefunction /= sp.sqrt(norm)  # type: ignore sp
+    uncertainty_x = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))  # type: ignore sp
     # sigma_0 = sqrt(2 * uncertainty_x) as we use above...
-    assert sp.simplify(uncertainty_x - (sigma_0**2 / 2)) == 0
+    assert sp.simplify(uncertainty_x - (sigma_0**2 / 2)) == 0  # type: ignore sp
 
 
 def assert_periodic_width() -> None:
@@ -63,15 +42,16 @@ def assert_periodic_width() -> None:
     k = sp.Symbol("k", real=True)
     sigma_0 = sp.Symbol("sigma_0", real=True, positive=True)
     wavefunction = sp.exp(-(sp.Abs(x) ** 2) / (2 * sigma_0**2))
-    norm = sp.integrate(sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
-    wavefunction /= sp.sqrt(norm)
-    periodic_x = sp.integrate(
-        sp.exp(sp.I * k * x) * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo)
+    norm = sp.integrate(sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))  # type: ignore sp
+    wavefunction /= sp.sqrt(norm)  # type: ignore sp
+    periodic_x = sp.integrate(  # type: ignore sp
+        sp.exp(sp.I * k * x) * sp.Abs(wavefunction) ** 2,  # type: ignore sp
+        (x, -sp.oo, sp.oo),
     )
-    print_latex(sp.simplify(periodic_x))
+    sp.print_latex(sp.simplify(periodic_x))  # type: ignore sp
 
-    x_squared = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))
-    print_latex(sp.simplify(x_squared))
+    x_squared = sp.integrate(x**2 * sp.Abs(wavefunction) ** 2, (x, -sp.oo, sp.oo))  # type: ignore sp
+    sp.print_latex(sp.simplify(x_squared))  # type: ignore sp
 
 
 assert_periodic_width()
@@ -105,15 +85,13 @@ if __name__ == "__main__":
     widths_ballistic_formula = [get_sigma_0(params) for params in data]
     print([f"{w:0.2e}" for w in widths_ballistic_formula])
 
-    fig, ax = util.get_figure()
+    fig, ax = plot.get_figure()
     (line,) = ax.plot(temperatures, widths_sse_formula)
     line.set_label("SSE Formula")
     (line,) = ax.plot(temperatures, widths_ballistic_formula)
     line.set_label("Ballistic Formula")
     (line,) = ax.plot(temperatures, widths_coherent)
     line.set_label("Coherent Widths")
-    # (line,) = ax.plot(temperatures, widths_free)
-    # line.set_label("Free Widths")
     ax.set_ylim(0, None)
 
     ax.set_xlabel("Temperature / K")
@@ -122,6 +100,6 @@ if __name__ == "__main__":
     ax.legend()
     fig.show()
 
-    util.wait_for_close()
+    plot.wait_for_close()
 
     print(f"{3.615 * angstrom:0.2e}")

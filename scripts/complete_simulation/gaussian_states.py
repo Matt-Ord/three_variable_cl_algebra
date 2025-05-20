@@ -59,13 +59,15 @@ if __name__ == "__main__":
     )
     theoretical = params.get_variance_x()
     theoretical = evaluate_equilibrium_expect_x_squared(
-        params.eta_m, params.eta_omega, params.eta_lambda
+        params.eta_m,  # type: ignore sp
+        params.eta_omega,  # type: ignore sp
+        params.eta_lambda,  # type: ignore sp
     )
 
     widths = operator.measure.all_variance_x(states, axis=0)
     print(theoretical, slate.array.average(widths))
     fig, ax, line = plot.array_against_basis(widths, measure="real")
-    line = ax.axhline(theoretical)
+    line = ax.axhline(theoretical)  # type: ignore sp
     line.set_color("red")
     line.set_label("Theoretical width")
     ax.set_title("Width of the wavepacket against time")
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     fig.show()
     # The width of the wavepacket oscillates about the equilibrium width
     fig, ax = plot.array_distribution(widths, distribution="normal")
-    line = ax.axvline(theoretical)
+    line = ax.axvline(theoretical)  # type: ignore sp
     line.set_color("red")
     line.set_label("Theoretical width")
     ax.set_title("Distribution of wavepacket width")
