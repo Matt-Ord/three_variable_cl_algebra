@@ -14,7 +14,7 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numpy>=2.2.2",
     "scipy>=1.15.1",
-    "sympy @ git+https://github.com/Matt-Ord/sympy.git@8502bd074cf7f28cbed0e8b55731620926431cc1",
+    "sympy @ git+https://github.com/Matt-Ord/sympy.git@ae968dc967b39a71abd0fd719e87c1206e480b08",
     "slate[plot] @ git+https://github.com/Matt-Ord/slate.git@f5af344",
     "slate_quantum[sse_solver_py,plot] @ git+https://github.com/Matt-Ord/slate_quantum.git@166caef",
     "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@9b5722b",
@@ -93,7 +93,7 @@ testpaths = ["tests"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
-include = ["tests", "three_variable", "examples"]
+include = ["tests", "three_variable", "scripts"]
 reportImplicitOverride = true
 
 [build-system]

@@ -5,14 +5,11 @@ from typing import Any
 
 import matplotlib as mpl
 import numpy as np
-import sympy as sp
 from slate import plot
 
 from three_variable.equilibrium_squeeze import (
-    R,
-    evaluate_equilibrium_r,
-    get_uncertainty_r,
-    get_uncertainty_x_r,
+    evaluate_equilibrium_expect_x_squared,
+    evaluate_equilibrium_uncertainty,
 )
 from three_variable.physical_systems import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
 
@@ -25,30 +22,15 @@ PHYSICAL_PARAMS = [
 ]
 
 
-def evaluate_equilibrium_uncertainty(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
-    *,
-    positive: bool = False,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
-        eta_m, eta_omega, eta_lambda, positive=positive
-    )
-
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_r())
-    return np.real_if_close(uncertainty_from_R(equilibrium_R))
-
-
 print("Omega      | m          | lambda        | uncertainty")
 print(
     f"{TOWNSEND_H_RU.omega:0.3e}",
     TOWNSEND_H_RU.m,
     f"{TOWNSEND_H_RU.lambda_:0.3e}",
     evaluate_equilibrium_uncertainty(
-        TOWNSEND_H_RU.eta_parameters.eta_m,
-        TOWNSEND_H_RU.eta_parameters.eta_omega,
-        TOWNSEND_H_RU.eta_parameters.eta_lambda,
+        TOWNSEND_H_RU.eta_parameters.eta_m,  # type: ignore sp
+        TOWNSEND_H_RU.eta_parameters.eta_omega,  # type: ignore sp
+        TOWNSEND_H_RU.eta_parameters.eta_lambda,  # type: ignore sp
     ),
 )
 print(
@@ -56,9 +38,9 @@ print(
     ELENA_LI_CU.m,
     f"{ELENA_LI_CU.lambda_:0.3e}",
     evaluate_equilibrium_uncertainty(
-        ELENA_LI_CU.eta_parameters.eta_m,
-        ELENA_LI_CU.eta_parameters.eta_omega,
-        ELENA_LI_CU.eta_parameters.eta_lambda,
+        ELENA_LI_CU.eta_parameters.eta_m,  # type: ignore sp
+        ELENA_LI_CU.eta_parameters.eta_omega,  # type: ignore sp
+        ELENA_LI_CU.eta_parameters.eta_lambda,  # type: ignore sp
     ),
 )
 print(
@@ -66,9 +48,9 @@ print(
     ELENA_NA_CU.m,
     f"{ELENA_NA_CU.lambda_:0.3e}",
     evaluate_equilibrium_uncertainty(
-        ELENA_NA_CU.eta_parameters.eta_m,
-        ELENA_NA_CU.eta_parameters.eta_omega,
-        ELENA_NA_CU.eta_parameters.eta_lambda,
+        ELENA_NA_CU.eta_parameters.eta_m,  # type: ignore sp
+        ELENA_NA_CU.eta_parameters.eta_omega,  # type: ignore sp
+        ELENA_NA_CU.eta_parameters.eta_lambda,  # type: ignore sp
     ),
 )
 
@@ -127,26 +109,12 @@ def plot_uncertainty_against_lambda_w_lower() -> None:
     fig.tight_layout()
     fig.savefig(
         f"{Path(__file__).parent}/out/theoretical_uncertainty.png",
-        dpi=600,
-        facecolor="none",
+        dpi=600,  # type: ignore sp
+        facecolor="none",  # type: ignore sp
         transparent=True,
     )
 
     fig.show()
-
-
-def evaluate_equilibrium_uncertainty_x(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_omega: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
-    *,
-    positive: bool = False,
-) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-    equilibrium_R = evaluate_equilibrium_r(  # noqa: N806
-        eta_m, eta_omega, eta_lambda, positive=positive
-    )
-    uncertainty_from_R = sp.lambdify((R), get_uncertainty_x_r())
-    return np.real_if_close(uncertainty_from_R(equilibrium_R))
 
 
 def plot_uncertainty_x_against_lambda_w() -> None:
@@ -155,7 +123,7 @@ def plot_uncertainty_x_against_lambda_w() -> None:
     eta_lambda_grid, eta_omega_grid = np.meshgrid(eta_lambda, eta_omega)
     eta_m = 1 * np.ones_like(eta_lambda_grid)
     uncertainty = (
-        evaluate_equilibrium_uncertainty_x(eta_m, eta_omega_grid, eta_lambda_grid)
+        evaluate_equilibrium_expect_x_squared(eta_m, eta_omega_grid, eta_lambda_grid)
         * eta_m
         / eta_omega_grid
     )
@@ -166,8 +134,7 @@ def plot_uncertainty_x_against_lambda_w() -> None:
     mesh.set_clim(0, 1)
 
     for name, parameters, c in PHYSICAL_PARAMS:
-        # print(parameters.eta_lambda, parameters.eta_omega, parameters.eta_m)
-        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)
+        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore sp
         scatter.set_label(name)
         scatter.set_color(c)
 
@@ -182,8 +149,8 @@ def plot_uncertainty_x_against_lambda_w() -> None:
     fig.tight_layout()
     fig.savefig(
         f"{Path(__file__).parent}/out/theoretical_width.png",
-        dpi=600,
-        facecolor="none",
+        dpi=600,  # type: ignore sp
+        facecolor="none",  # type: ignore sp
         transparent=True,
     )
     fig.show()

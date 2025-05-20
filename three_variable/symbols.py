@@ -62,8 +62,8 @@ def full_from_dimensionless(expr: sp.Expr) -> sp.Expr:
 # Defines the expressions for the explicit squeezing and displacement operators
 a_expr = BosonOp("a")
 a_dagger_expr = cast("sp.Expr", Dagger(a_expr))
-k_plus_expr = sp.Mul(0.5, sp.Pow(Dagger(a_expr), 2))
-k_0_expr = sp.Mul(0.5, sp.Add(0.5, sp.Mul(Dagger(a_expr), a_expr)))
+k_plus_expr = sp.Mul(0.5, sp.Pow(Dagger(a_expr), 2))  # type: ignore sp
+k_0_expr = sp.Mul(0.5, sp.Add(0.5, sp.Mul(Dagger(a_expr), a_expr)))  # type: ignore sp
 k_minus_expr = sp.Mul(0.5, sp.Pow(a_expr, 2))
 
 x_expr = sp.Mul(sp.Add(a_expr, a_dagger_expr), 1 / sp.sqrt(2))  # type: ignore sp

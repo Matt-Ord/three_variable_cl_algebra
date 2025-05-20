@@ -86,7 +86,7 @@ def plot_uncertainty_against_lambda_w() -> None:
     ax.set_xlim(old_lim)
 
     for name, parameters, c in PHYSICAL_PARAMS:
-        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)
+        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore unknown
         scatter.set_label(name)
         scatter.set_color(c)
 
@@ -210,7 +210,7 @@ def plot_uncertainty_x_against_lambda_w() -> None:
     mesh.set_clim(0, 1)
 
     for name, parameters, c in PHYSICAL_PARAMS:
-        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)
+        scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore unknown
         scatter.set_label(name)
         scatter.set_color(c)
 
@@ -224,16 +224,16 @@ def plot_uncertainty_x_against_lambda_w() -> None:
 
 def get_equilibrium_squeeze_ratio_free() -> sp.Expr:
     equilibrium = get_equilibrium_squeeze_ratio()
-    return sp.limit(equilibrium, eta_omega, np.inf)
+    return sp.limit(equilibrium, eta_omega, sp.oo)
 
 
 def evaluate_equilibrium_uncertainty_free(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.float64]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.float64]],
-) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    eta_m: np.ndarray[tuple[int, ...], np.dtype[np.floating]],
+    eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.floating]],
+) -> np.ndarray[tuple[int, ...], np.dtype[np.floating]]:
     expression_r = get_equilibrium_squeeze_ratio_free()
     lambda_r = sp.lambdify((_eta_m_symbol, _eta_lambda_symbol), expression_r)
-    equilibrium_r = lambda_r(eta_m, eta_lambda)
+    equilibrium_r = lambda_r(eta_m, eta_lambda)  # type: ignore unknown
 
     ratio_formula = sp.factor(squeeze_ratio_from_zeta_expr(uncertainty_squared))
     ratio_formula = ratio_formula.subs(
@@ -244,7 +244,7 @@ def evaluate_equilibrium_uncertainty_free(
         }
     )
     uncertainty_from_r = sp.lambdify((squeeze_ratio), ratio_formula)
-    return np.real_if_close(uncertainty_from_r(equilibrium_r))
+    return np.real_if_close(uncertainty_from_r(equilibrium_r))  # type: ignore unknown
 
 
 def plot_uncertainty_against_lambda_free_particle() -> None:
@@ -265,12 +265,12 @@ def plot_uncertainty_against_lambda_free_particle() -> None:
 
 
 def evaluate_equilibrium_uncertainty_x_free(
-    eta_m: np.ndarray[tuple[int], np.dtype[np.floating]],
-    eta_lambda: np.ndarray[tuple[int], np.dtype[np.floating]],
-) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
+    eta_m: np.ndarray[tuple[int, ...], np.dtype[np.floating]],
+    eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.floating]],
+) -> np.ndarray[tuple[int, ...], np.dtype[np.floating]]:
     expression_r = get_equilibrium_squeeze_ratio_free()
     lambda_r = sp.lambdify((_eta_m_symbol, _eta_lambda_symbol), expression_r)
-    equilibrium_r = lambda_r(eta_m, eta_lambda)
+    equilibrium_r = lambda_r(eta_m, eta_lambda)  # type: ignore unknown
 
     ratio_formula = sp.factor(squeeze_ratio_from_zeta_expr(uncertainty_squared))
     ratio_formula = ratio_formula.subs(
@@ -281,7 +281,7 @@ def evaluate_equilibrium_uncertainty_x_free(
         }
     )
     uncertainty_from_r = sp.lambdify((squeeze_ratio), ratio_formula)
-    return np.real_if_close(uncertainty_from_r(equilibrium_r))
+    return np.real_if_close(uncertainty_from_r(equilibrium_r))  # type: ignore unknown
 
 
 def plot_uncertainty_x_against_lambda_free_particle() -> None:
@@ -292,8 +292,8 @@ def plot_uncertainty_x_against_lambda_free_particle() -> None:
     fig, ax = plot.get_figure()
 
     def low_friction(
-        eta_lambda: np.ndarray[tuple[int], np.dtype[np.floating]],
-    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
+        eta_lambda: np.ndarray[tuple[int, ...], np.dtype[np.floating]],
+    ) -> np.ndarray[tuple[int, ...], np.dtype[np.floating]]:
         return (np.sqrt(2) * np.sqrt(eta_lambda)) / 2
 
     (line,) = ax.plot(eta_lambda, uncertainty)

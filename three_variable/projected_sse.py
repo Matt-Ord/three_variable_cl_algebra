@@ -9,6 +9,11 @@ from sympy.physics.quantum import (
     Dagger,
 )
 
+from three_variable.coherent_states import (
+    action_from_expr,
+    expectation_from_expr,
+    extract_action,
+)
 from three_variable.symbols import (
     KBT,
     a_dagger_expr,
@@ -26,12 +31,10 @@ from three_variable.symbols import (
     x_expr,
 )
 
-from .coherent_states import action_from_expr, expectation_from_expr, extract_action
-
 
 def _get_lindblad_operator_raw() -> sp.Expr:
     return (sp.sqrt(lambda_ * (4 * m * KBT) / (hbar**2)) * x_expr) + (
-        sp.I * sp.sqrt(lambda_ / (4 * m * KBT)) * p_expr
+        1j * sp.sqrt(lambda_ / (4 * m * KBT)) * p_expr
     )
 
 
@@ -67,7 +70,7 @@ def get_drift_term() -> sp.Expr:
     lindblad_operator = get_lindblad_operator()
     lindblad_expectation = get_lindblad_expectation()
     return (
-        sp.conjugate(lindblad_expectation) * lindblad_operator
+        sp.conjugate(lindblad_expectation) * lindblad_operator  # type: ignore sp
         - (Dagger(lindblad_operator) * lindblad_operator) / 2
         - (Dagger(lindblad_expectation) * lindblad_expectation) / 2
     )
@@ -78,7 +81,7 @@ def _get_hamiltonian_shift_term_raw() -> sp.Expr:
 
 
 def _get_hamiltonian_shift_term_simple() -> sp.Expr:
-    return -sp.I * lambda_ * hbar * (a_dagger_expr**2 - a_expr**2) / 2
+    return -1j * lambda_ * hbar * (a_dagger_expr**2 - a_expr**2) / 2
 
 
 def get_hamiltonian_shift_term() -> sp.Expr:
@@ -112,7 +115,7 @@ def get_system_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     linear_term = get_linear_term()
     kinetic_term = get_kinetic_term()
     harmonic_term = get_harmonic_term()
-    expr = (-sp.I / hbar) * (linear_term + kinetic_term + harmonic_term)
+    expr = (-1j / hbar) * (linear_term + kinetic_term + harmonic_term)
 
     return sp.simplify(
         dimensionless_from_full(sp.factor(extract_action(action_from_expr(expr), ty))),
@@ -128,7 +131,7 @@ def get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     expr = drift_term + diffusion_term
     environment_derivative = sp.factor(extract_action(action_from_expr(expr), ty))
 
-    shift_expr = (-sp.I / hbar) * get_hamiltonian_shift_term()
+    shift_expr = (-1j / hbar) * get_hamiltonian_shift_term()
     shift_derivative = sp.factor(extract_action(action_from_expr(shift_expr), ty))
 
     return sp.simplify(
