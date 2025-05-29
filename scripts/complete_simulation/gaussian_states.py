@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
-import slate
+import slate_core
 from adsorbate_simulation.simulate import run_stochastic_simulation
 from adsorbate_simulation.util import (
     EtaParameters,
     spaced_time_basis,
 )
 from scipy.constants import hbar  # type: ignore library
-from slate import metadata, plot
+from slate_core import metadata, plot
 from slate_quantum import operator
 
 from three_variable.equilibrium_squeeze import (
@@ -35,7 +35,9 @@ if __name__ == "__main__":
     ax.set_title("Displacement of the wavepacket against time")
     ax.set_xlabel("Time /s")
     ax.set_ylabel("Position (a.u.)")
-    delta_x = metadata.volume.fundamental_stacked_delta_x(states.basis.metadata()[1])
+    delta_x = metadata.volume.fundamental_stacked_delta_x(
+        states.basis.metadata().children[1]
+    )
     ax.set_ylim(0, delta_x[0][0])
     fig.show()
     # We have a free particle, so the wavepacket is equally likely
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     )
 
     widths = operator.measure.all_variance_x(states, axis=0)
-    print(theoretical, slate.array.average(widths))
+    print(theoretical, slate_core.array.average(widths))
     fig, ax, line = plot.array_against_basis(widths, measure="real")
     line = ax.axhline(theoretical)  # type: ignore sp
     line.set_color("red")
@@ -112,7 +114,9 @@ if __name__ == "__main__":
     ax.set_title("Momentum of the wavepacket against time")
     ax.set_xlabel("Time /s")
     ax.set_ylabel("Momentum (a.u.)")
-    delta_k = metadata.volume.fundamental_stacked_delta_k(states.basis.metadata()[1])
+    delta_k = metadata.volume.fundamental_stacked_delta_k(
+        states.basis.metadata().children[1]
+    )
     ax.set_ylim(-delta_k[0][0] / 2, delta_k[0][0] / 2)
     fig.show()
     # The distribution of momentum of the wavepacket is centered at zero,

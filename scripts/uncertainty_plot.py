@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import sympy as sp
 from matplotlib.colors import LogNorm
-from slate import plot
+from slate_core import plot
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (

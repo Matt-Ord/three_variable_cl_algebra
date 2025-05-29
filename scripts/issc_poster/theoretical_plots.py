@@ -5,7 +5,7 @@ from typing import Any
 
 import matplotlib as mpl
 import numpy as np
-from slate import plot
+from slate_core import plot
 
 from three_variable.equilibrium_squeeze import (
     evaluate_equilibrium_expect_x_squared,

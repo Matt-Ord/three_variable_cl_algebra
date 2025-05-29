@@ -8,7 +8,7 @@ from adsorbate_simulation.util import (
 )
 from matplotlib.scale import SymmetricalLogScale
 from scipy.constants import hbar  # type: ignore libary
-from slate import array, linalg, plot
+from slate_core import array, linalg, plot
 from slate_quantum import state
 
 from three_variable.physical_systems import TOWNSEND_H_RU
@@ -31,11 +31,14 @@ if __name__ == "__main__":
 
     condition = condition.with_temperature(condition.config.temperature * (3 / 2))
     diagonal_hamiltonian = linalg.into_diagonal_hermitian(condition.hamiltonian)
+    diagonal_hamiltonian = array.as_upcast_basis(
+        diagonal_hamiltonian, diagonal_hamiltonian.basis.metadata()
+    )
     target_occupation = get_eigenvalue_occupation_hermitian(
         diagonal_hamiltonian, condition.config.temperature
     )
 
-    states = states.with_state_basis(diagonal_hamiltonian.basis.inner[0])
+    states = states.with_state_basis(diagonal_hamiltonian.basis.inner.inner.children[0])
 
     average_occupation, std_occupation = state.get_average_occupations(states)
     average_occupation = array.cast_basis(average_occupation, target_occupation.basis)

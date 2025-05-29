@@ -6,7 +6,7 @@ from functools import cache
 import numpy as np
 import sympy as sp
 from scipy.constants import hbar as hbar_value  # type: ignore scipy
-from slate.util import timed
+from slate_core.util import timed
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import expect_x_squared, uncertainty_squared

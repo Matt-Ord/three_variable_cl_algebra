@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import sympy as sp
 from scipy.constants import angstrom  # type: ignore sp
-from slate import plot
+from slate_core import plot
 
 from three_variable.equilibrium_squeeze import evaluate_equilibrium_expect_x_squared
 from three_variable.physical_systems import (
