@@ -7,7 +7,7 @@ import numpy as np
 from adsorbate_simulation.simulate import run_stochastic_simulation
 from adsorbate_simulation.util import spaced_time_basis
 from scipy.constants import hbar  # type: ignore libary
-from slate import array, plot
+from slate_core import array, plot
 from slate_quantum import dynamics
 
 from three_variable.simulation import get_condition_from_params
@@ -29,14 +29,14 @@ line1.set_label("Typical State")
 
 ax1 = ax.twinx()
 _, _, line0 = plot.array_against_axes_1d(
-    array.as_outer_array(condition.potential), ax=ax1
+    array.extract_diagonal(condition.potential), ax=ax1
 )
 line0.set_linewidth(2)
 line0.set_color("black")
 line0.set_label("Potential")
 
 
-ax.set_xlim(0, states.basis.metadata()[1][0].delta)
+ax.set_xlim(0, states.basis.metadata().children[1].children[0].delta)
 ax.set_ylabel("Occupation")
 ax.set_xlabel("Position (/m)")
 ax1.set_ylabel("Potential (/J)")

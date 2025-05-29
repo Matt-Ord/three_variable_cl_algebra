@@ -5,7 +5,7 @@ from typing import Any
 
 import matplotlib as mpl
 import numpy as np
-from slate.plot import get_figure, wait_for_close
+from slate_core.plot import get_figure, wait_for_close
 
 mpl.rcParams["axes.labelsize"] = 12
 

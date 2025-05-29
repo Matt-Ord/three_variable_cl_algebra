@@ -4,7 +4,7 @@ from functools import cache
 from typing import Literal
 
 import sympy as sp
-from slate.util import timed
+from slate_core.util import timed
 from sympy.physics.quantum import (
     Dagger,
 )

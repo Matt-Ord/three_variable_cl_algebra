@@ -4,8 +4,8 @@ import numpy as np
 from adsorbate_simulation.simulate import run_stochastic_simulation
 from adsorbate_simulation.util import spaced_time_basis
 from scipy.constants import hbar  # type: ignore libary
-from slate import basis, plot
-from slate.plot import (
+from slate_core import basis, plot
+from slate_core.plot import (
     animate_data_over_list_1d_k,
     animate_data_over_list_1d_x,
 )
@@ -29,11 +29,11 @@ if __name__ == "__main__":
 
     # We start the system in a gaussian state, centered at the origin.
     fig, ax, _ = plot.array_against_axes_1d(states[0, :], measure="abs")
-    line = ax.axvline(1 / 6 * states.basis.metadata()[1][0].delta)
+    line = ax.axvline(1 / 6 * states.basis.metadata().children[1].children[0].delta)
     line.set_color("black")
-    line = ax.axvline(5 / 6 * states.basis.metadata()[1][0].delta)
+    line = ax.axvline(5 / 6 * states.basis.metadata().children[1].children[0].delta)
     line.set_color("black")
-    ax.set_xlim(0, states.basis.metadata()[1][0].delta)
+    ax.set_xlim(0, states.basis.metadata().children[1].children[0].delta)
     ax.set_title("Initial State - A Gaussian Wavepacket Centered at the Origin")
     fig.show()
 
@@ -41,9 +41,9 @@ if __name__ == "__main__":
     ax.set_title("Stochastic Evolution of the Wavepacket")
     ax.set_xlabel("Position (a.u.)")
     ax.set_ylabel("Probability")
-    line = ax.axvline(1 / 6 * states.basis.metadata()[1][0].delta)
+    line = ax.axvline(1 / 6 * states.basis.metadata().children[1].children[0].delta)
     line.set_color("black")
-    line = ax.axvline(5 / 6 * states.basis.metadata()[1][0].delta)
+    line = ax.axvline(5 / 6 * states.basis.metadata().children[1].children[0].delta)
     line.set_color("black")
     fig.show()
     fig, ax, anim1 = animate_data_over_list_1d_k(states, measure="abs")
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     plot.wait_for_close()
 
-    basis_list = basis.as_index_basis(basis.as_tuple_basis(states.basis)[0])
+    basis_list = basis.as_index(basis.as_tuple(states.basis).children[0])
     for i in basis_list.points:
         s = states[i.item(), :]
         assert np.isclose(1, normalization.as_array(), atol=1e-2)

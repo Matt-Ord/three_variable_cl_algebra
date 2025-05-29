@@ -10,7 +10,7 @@ from adsorbate_simulation.util import (
     spaced_time_basis,
 )
 from scipy.constants import hbar  # type: ignore library
-from slate import plot
+from slate_core import plot
 from slate_quantum import operator
 
 from three_variable.physical_systems import TOWNSEND_H_RU
