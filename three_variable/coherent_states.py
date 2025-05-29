@@ -17,44 +17,6 @@ from three_variable.symbols import (
     zeta,
 )
 
-kernel_prefactor_expr = (1 - sp.Abs(sp.conjugate(zeta)) ** 2) ** (-1 / 2)
-kernel_exp_expr = sp.exp(
-    (
-        2 * sp.Abs(alpha) ** 2
-        + alpha**2 * sp.conjugate(zeta)
-        + sp.conjugate(alpha) ** 2 * zeta
-    )
-    / (2 * (1 - sp.Abs(sp.conjugate(zeta)) ** 2))
-)
-kernel_expr = (
-    (kernel_prefactor_expr * kernel_exp_expr)
-    .subs(sp.Abs(alpha) ** 2, alpha * sp.conjugate(alpha))
-    .subs(sp.Abs(zeta) ** 2, zeta * sp.conjugate(zeta))
-)
-
-
-def complex_wirtinger_derivative(expr: sp.Expr, var: sp.Symbol) -> sp.Expr:
-    """Compute the derivative of a complex expression with respect to a complex variable."""
-    re_var = sp.Symbol(f"re_{var.name}", real=True)
-    im_var = sp.Symbol(f"im_{var.name}", real=True)
-    subbed = expr.subs(sp.Abs(var) ** 2, var * sp.conjugate(var)).subs(
-        var, re_var + 1j * im_var
-    )
-
-    re_deriv = sp.Derivative(subbed, re_var).doit()  # type: ignore[no-untyped-call]
-    im_deriv = sp.Derivative(subbed, im_var).doit()  # type: ignore[no-untyped-call]
-
-    deriv = 0.5 * (re_deriv - 1j * im_deriv)
-    return sp.simplify(
-        deriv.subs(
-            {
-                re_var: 0.5 * (var + sp.conjugate(var)),
-                im_var: -1j * 0.5 * (var - sp.conjugate(var)),
-            }
-        )
-    )
-
-
 d_alpha = sp.Symbol("d_alpha")
 d_zeta = sp.Symbol("d_zeta")
 
