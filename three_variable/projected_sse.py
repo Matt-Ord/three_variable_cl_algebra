@@ -71,7 +71,7 @@ def get_drift_term() -> sp.Expr:
     lindblad_operator = get_lindblad_operator()
     lindblad_expectation = get_lindblad_expectation()
     return (
-        sp.conjugate(lindblad_expectation) * lindblad_operator  # type: ignore sp
+        Dagger(lindblad_expectation) * lindblad_operator  # type: ignore sp
         - (Dagger(lindblad_operator) * lindblad_operator) / 2
         - (Dagger(lindblad_expectation) * lindblad_expectation) / 2
     )
@@ -127,3 +127,11 @@ def get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
         dimensionless_from_full(shift_derivative + environment_derivative),
         rational=True,
     )
+
+
+@cache
+@timed
+def get_full_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
+    system_derivative = get_system_derivative(ty)
+    environment_derivative = get_environment_derivative(ty)
+    return system_derivative + environment_derivative
