@@ -11,7 +11,7 @@ from three_variable.equilibrium_squeeze import (
     evaluate_equilibrium_expect_x_squared,
     evaluate_equilibrium_uncertainty,
 )
-from three_variable.physical_systems import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
+from three_variable.simulation import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
 
 mpl.rcParams["axes.labelsize"] = 14
 

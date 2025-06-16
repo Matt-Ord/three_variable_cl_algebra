@@ -13,8 +13,7 @@ from scipy.constants import hbar  # type: ignore library
 from slate_core import plot
 from slate_quantum import operator
 
-from three_variable.physical_systems import TOWNSEND_H_RU
-from three_variable.simulation import get_condition_from_params
+from three_variable.simulation import TOWNSEND_H_RU, get_condition_from_params
 
 mpl.rcParams["axes.labelsize"] = 14
 if __name__ == "__main__":

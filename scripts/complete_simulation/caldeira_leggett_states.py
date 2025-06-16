@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import slate_core
-from adsorbate_simulation.simulate import run_stochastic_simulation
+from adsorbate_simulation.simulate import run_caldeira_leggett_simulation
 from adsorbate_simulation.util import (
     EtaParameters,
     spaced_time_basis,
@@ -14,8 +14,7 @@ from slate_quantum import operator
 from three_variable.equilibrium_squeeze import (
     evaluate_equilibrium_expect_x_squared,
 )
-from three_variable.physical_systems import TOWNSEND_H_RU
-from three_variable.simulation import get_condition_from_params
+from three_variable.simulation import TOWNSEND_H_RU, get_condition_from_params
 
 if __name__ == "__main__":
     eta_omega, eta_lambda = 0.5, 40.0
@@ -24,9 +23,20 @@ if __name__ == "__main__":
         TOWNSEND_H_RU.eta_parameters.eta_lambda,
     )
     eta_omega, eta_lambda = 0.5, 40.0
-    condition = get_condition_from_params(eta_omega, eta_lambda, mass=1)
-    times = spaced_time_basis(n=100, dt=0.1 * np.pi * hbar)
-    states = run_stochastic_simulation(condition, times)
+    eta_omega, eta_lambda = 5, 20.0
+    condition = get_condition_from_params(
+        eta_omega, eta_lambda, mass=1, minimum_occupation=0.0001, truncate=False
+    )
+    print(condition.config.simulation_basis.resolution)
+    condition = condition.with_config(
+        condition.config.with_environment(
+            condition.config.environment.with_eta(
+                condition.config.environment.eta * hbar**2
+            )
+        )
+    )
+    times = spaced_time_basis(n=100, dt=0.01 * np.pi * hbar)
+    states = run_caldeira_leggett_simulation(condition, times)
 
     # Using the e^{ikx} operator, we can calculate the position
     # of the wavepacket.
@@ -53,7 +63,7 @@ if __name__ == "__main__":
     # This remains almost constant over the course of the simulation.
     params = EtaParameters.from_condition(condition)
     print(params.eta_m, params.eta_omega, params.eta_lambda)
-    print("", eta_omega, eta_lambda)
+    print("parameters", eta_omega, eta_lambda)
     params = EtaParameters(
         eta_m=params.eta_m,
         eta_omega=np.sqrt(2 / 3) * params.eta_omega,
