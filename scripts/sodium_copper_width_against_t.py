@@ -6,7 +6,7 @@ from scipy.constants import angstrom  # type: ignore sp
 from slate_core import plot
 
 from three_variable.equilibrium_squeeze import evaluate_equilibrium_expect_x_squared
-from three_variable.physical_systems import (
+from three_variable.simulation import (
     ELENA_NA_CU,
     ELENA_NA_CU_BALLISTIC,
     BaseParameters,

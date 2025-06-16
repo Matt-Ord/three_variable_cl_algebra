@@ -18,7 +18,7 @@ from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
 )
-from three_variable.physical_systems import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
+from three_variable.simulation import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
 from three_variable.symbols import (
     eta_lambda as _eta_lambda_symbol,
 )
@@ -75,7 +75,7 @@ def plot_uncertainty_against_lambda_w() -> None:
     def get_threshold_from_omega(
         eta_omega: np.ndarray[Any, np.dtype[np.floating]],
     ) -> np.ndarray[Any, np.dtype[np.floating]]:
-        return (16 * eta_omega**2 + 8 * eta_omega - 1) / 4
+        return (1 - 4 * eta_omega) ** 2 / 2
 
     old_lim = ax.get_xlim()
     threshold_lambda = get_threshold_from_omega(eta_omega)
@@ -118,7 +118,7 @@ def plot_uncertainty_against_lambda_w_lower() -> None:
     def get_threshold_from_omega(
         eta_omega: np.ndarray[Any, np.dtype[np.floating]],
     ) -> np.ndarray[Any, np.dtype[np.floating]]:
-        return np.abs(16 * eta_omega**2 + 8 * eta_omega - 1) / 4
+        return (1 - 4 * eta_omega) ** 2 / 2
 
     def get_threshold_from_omega_lower(
         eta_omega: np.ndarray[Any, np.dtype[np.floating]],

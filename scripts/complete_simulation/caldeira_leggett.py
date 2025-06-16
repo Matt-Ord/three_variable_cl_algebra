@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from adsorbate_simulation.simulate import run_stochastic_simulation
+from adsorbate_simulation.simulate import run_caldeira_leggett_simulation
 from adsorbate_simulation.util import spaced_time_basis
 from scipy.constants import hbar  # type: ignore libary
 from slate_core import basis, plot
@@ -19,11 +19,22 @@ if __name__ == "__main__":
         TOWNSEND_H_RU.eta_parameters.eta_lambda,
     )
     eta_omega, eta_lambda = 0.5, 40.0
-    condition = get_condition_from_params(eta_omega, eta_lambda, mass=1)
+    eta_omega, eta_lambda = 5, 20.0
+    condition = get_condition_from_params(
+        eta_omega, eta_lambda, mass=1, minimum_occupation=0.0001, truncate=False
+    )
+    condition = condition.with_config(
+        condition.config.with_environment(
+            condition.config.environment.with_eta(
+                condition.config.environment.eta * hbar**2
+            )
+        )
+    )
     # We simulate the system using the stochastic Schrodinger equation.
     # We find a localized stochastic evolution of the wavepacket.
-    times = spaced_time_basis(n=100, dt=0.1 * np.pi * hbar)
-    states = run_stochastic_simulation.call_cached(condition, times)
+    times = spaced_time_basis(n=100, dt=0.01 * np.pi * hbar)
+    print(condition.config.simulation_basis.resolution)
+    states = run_caldeira_leggett_simulation(condition, times)
     states = dynamics.select_realization(states)
 
     # We start the system in a gaussian state, centered at the origin.

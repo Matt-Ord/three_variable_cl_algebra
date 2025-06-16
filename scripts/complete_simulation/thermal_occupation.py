@@ -11,8 +11,7 @@ from scipy.constants import hbar  # type: ignore libary
 from slate_core import array, linalg, plot
 from slate_quantum import state
 
-from three_variable.physical_systems import TOWNSEND_H_RU
-from three_variable.simulation import get_condition_from_params
+from three_variable.simulation import TOWNSEND_H_RU, get_condition_from_params
 
 if __name__ == "__main__":
     eta_omega, eta_lambda = (
@@ -22,7 +21,6 @@ if __name__ == "__main__":
     condition = get_condition_from_params(eta_omega, eta_lambda)
     eta_omega, eta_lambda = 0.5, 40.0
     condition = get_condition_from_params(eta_omega, eta_lambda, mass=hbar**2)
-    print(condition)
     # We simulate the system using the stochastic Schrodinger equation.
     # We find a localized stochastic evolution of the wavepacket.
     times = spaced_time_basis(n=10, dt=0.1 * np.pi * hbar)
