@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 import sympy as sp
+from sympy.physics.quantum import Dagger
 from sympy.physics.units import hbar
 
 from tests.util import expression_equals
@@ -69,24 +70,21 @@ def expectation_from_expr_test(action: sp.Expr) -> sp.Expr:
     return expectation_from_action(action_from_expr(action))
 
 
-@pytest.mark.parametrize(
-    ("expr", "expectation"),
-    [
-        (a_expr, get_expectation_a()),
-        (a_dagger_expr, get_expectation_a_dagger()),
-        (k_plus_expr, get_expectation_k_plus()),
-        (k_0_expr, get_expectation_k_0()),
-        (k_minus_expr, get_expectation_k_minus()),
-        (x_expr, (get_expectation_a() + get_expectation_a_dagger()) / sp.sqrt(2)),
-        (
-            p_expr,
-            -1j
-            * hbar
-            * (get_expectation_a() - get_expectation_a_dagger())
-            / sp.sqrt(2),
-        ),
-    ],
-)
+COMMON_EXPECTATIONS: tuple[sp.Expr, sp.Expr] = [
+    (a_expr, get_expectation_a()),
+    (a_dagger_expr, get_expectation_a_dagger()),
+    (k_plus_expr, get_expectation_k_plus()),
+    (k_0_expr, get_expectation_k_0()),
+    (k_minus_expr, get_expectation_k_minus()),
+    (x_expr, (get_expectation_a() + get_expectation_a_dagger()) / sp.sqrt(2)),
+    (
+        p_expr,
+        -1j * hbar * (get_expectation_a() - get_expectation_a_dagger()) / sp.sqrt(2),
+    ),
+]
+
+
+@pytest.mark.parametrize(("expr", "expectation"), COMMON_EXPECTATIONS)
 def test_expectation_from_action(expr: sp.Expr, expectation: sp.Expr) -> None:
     from_action = expectation_from_expr_test(expr)
     assert expression_equals(from_action, expectation)
@@ -94,41 +92,49 @@ def test_expectation_from_action(expr: sp.Expr, expectation: sp.Expr) -> None:
     assert expression_equals(from_expr, expectation)
 
 
+@pytest.mark.parametrize(("expr", "expectation"), COMMON_EXPECTATIONS)
+def test_expectation_limit(expr: sp.Expr, expectation: sp.Expr) -> None:
+    """Test the expectation value of k zero."""
+    actual = expectation.subs(zeta, 0)
+    expected = expr.subs({Dagger(a_expr): sp.conjugate(alpha), a_expr: alpha})
+    assert expression_equals(actual, expected)
+
+
 def test_expectation_from_kernel() -> None:
     """Test the expectation value of a from the kernel."""
     derivative = complex_wirtinger_derivative(sp.log(kernel_expr), alpha)
-    derivative_alpha_expr = get_expectation_a()
+    derivative_alpha_expr = get_expectation_a_dagger()
     assert expression_equals(derivative, derivative_alpha_expr)
 
     derivative = complex_wirtinger_derivative(sp.log(kernel_expr), zeta)
-    derivative_zeta_expr = get_expectation_k_minus()
+    derivative_zeta_expr = get_expectation_k_plus()
     assert expression_equals(derivative, derivative_zeta_expr)
 
 
-def test_expectation_a_dagger() -> None:
-    """Test the expectation value of a dagger."""
+def test_expectation_a() -> None:
+    """Test the expectation value of a."""
     expectation_a = get_expectation_a()
     expectation_a_dagger = get_expectation_a_dagger()
     assert expression_equals(sp.conjugate(expectation_a), expectation_a_dagger)
 
-    derivative_formula = alpha + zeta * expectation_a
-    assert expression_equals(derivative_formula, expectation_a_dagger)
+    derivative_formula = alpha + zeta * expectation_a_dagger
+    assert expression_equals(derivative_formula, expectation_a)
 
 
-def test_expectation_k_plus() -> None:
+def test_expectation_k_minus() -> None:
     """Test the expectation value of k plus."""
     expectation_k_minus = get_expectation_k_minus()
     expectation_k_plus = get_expectation_k_plus()
     assert expression_equals(sp.conjugate(expectation_k_minus), expectation_k_plus)
 
-    expectation_a = get_expectation_a()
+    expectation_a = get_expectation_a_dagger()
     derivative_formula = (
         0.5 * alpha**2
         + 0.5 * zeta
         + alpha * zeta * expectation_a
-        + zeta**2 * expectation_k_minus
+        + zeta**2 * expectation_k_plus
     )
-    assert expression_equals(derivative_formula, expectation_k_plus)
+    assert expression_equals(derivative_formula, expectation_k_minus)
 
 
 def test_get_expectation_k_0() -> None:
