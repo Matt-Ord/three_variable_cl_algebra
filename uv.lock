@@ -3,22 +3,6 @@ revision = 2
 requires-python = "==3.13.*"
 
 [[package]]
-name = "adsorbate-simulation"
-version = "0.0.1"
-source = { git = "https://github.com/Matt-Ord/adsorbate_simulation?rev=6114583dd5212c9defc3770ac7c7fc1cafcd6536#6114583dd5212c9defc3770ac7c7fc1cafcd6536" }
-dependencies = [
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "slate-core" },
-    { name = "slate-quantum", extra = ["sse-solver-py"] },
-]
-
-[package.optional-dependencies]
-plot = [
-    { name = "slate-quantum", extra = ["plot"] },
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -316,23 +300,6 @@ wheels = [
 ]
 
 [[package]]
-name = "qutip"
-version = "5.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/11/63/b4c00de6068b229cecb92016cf9d2bd849d919f5a0b4247f5ea933e82349/qutip-5.2.0.tar.gz", hash = "sha256:9725186ebc22c8cbd543faaf4c4c1e628bf77f185553a89339104b6430015b7a", size = 6969363, upload-time = "2025-06-06T21:38:37.867Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/aa/0e2905c349c955c0e056bfc20d2ba4a64dc9dc607b850702c11fc512a75a/qutip-5.2.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:b74468e05c296852777e04e23b57cb90264ea3c8db00a384589d9d2aeac15013", size = 10598022, upload-time = "2025-06-06T21:38:29.59Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/ec/2968f2afa8e26c02a669c0aa61036b1cf93d8301a86c5a3b1f184cd47311/qutip-5.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b63726d4cd7c8399a6e1a9fbdbfca1968e2bbb5aeb7b2ff6f5b598fd63ae1005", size = 10290850, upload-time = "2025-06-06T21:38:31.72Z" },
-    { url = "https://files.pythonhosted.org/packages/68/de/6c05263deda1c8c4d4296ff8cb1fd512d71b9febac4b66fc5653f022c94d/qutip-5.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:37773c665a65f5f316144eb59f71521ad3f43f7b24ca34454116d1806bfd7422", size = 30554435, upload-time = "2025-06-06T21:38:33.839Z" },
-    { url = "https://files.pythonhosted.org/packages/00/0c/8003776a4bfbda86713fad0b86ac51de1c15fc0d652b43d8244b612ae178/qutip-5.2.0-cp313-cp313-win_amd64.whl", hash = "sha256:47ad10b10ede76ca84362f9b33a04e56e8b913cc018f0daae35d556b219ad41c", size = 10133063, upload-time = "2025-06-06T21:38:36.036Z" },
-]
-
-[[package]]
 name = "ruff"
 version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
@@ -408,33 +375,6 @@ dependencies = [
 plot = [
     { name = "matplotlib" },
 ]
-
-[[package]]
-name = "slate-quantum"
-version = "0.0.1"
-source = { git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df#1011c95f42e32e5edd48f801986be6e98df739df" }
-dependencies = [
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "slate-core" },
-]
-
-[package.optional-dependencies]
-plot = [
-    { name = "matplotlib" },
-    { name = "slate-core", extra = ["plot"] },
-]
-qutip = [
-    { name = "qutip" },
-]
-sse-solver-py = [
-    { name = "sse-solver-py" },
-]
-
-[[package]]
-name = "sse-solver-py"
-version = "0.1.0"
-source = { git = "https://github.com/Matt-Ord/sse_solver.git?subdirectory=sse_solver_py&rev=4dfda95#4dfda95a1df2d04bf4b96a9081467a1cf474f13f" }
 
 [[package]]
 name = "sympy"
