@@ -11,7 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from scipy.constants import Boltzmann  # type: ignore lib
+<<<<<<< HEAD
 from scipy.sparse.linalg import LinearOperator, lgmres
+=======
+from scipy.sparse.linalg import LinearOperator, gmres  # type: ignore lib
+>>>>>>> origin/correct-differential-action
 from slate_core import linalg
 from slate_quantum import State, operator
 
@@ -61,12 +65,21 @@ def get_deterministic_environment_operator_fn(
         mass=condition.mass,
     )
 
+<<<<<<< HEAD
     def _fn(x: np.ndarray[Any, np.dtype[np.complexfloating]]):
         """Function to compute the deterministic environment operator."""
         state = State(state_basis, x)
         # The deterministic environment operator is given by
         # A = -i / hbar (H + H') + <L dagger>L - 0.5 * L dagger L - 0.5 * <L dagger> * <L> |psi>
         # TODO: better __sub__ support in Slate
+=======
+    def _fn(
+        x: np.ndarray[Any, np.dtype[np.complexfloating]],
+    ) -> np.ndarray[Any, np.dtype[np.complexfloating]]:
+        state = State(state_basis, x)
+        # The deterministic environment operator is given by
+        # A = -i / hbar (H + H') + <L dagger>L - 0.5 * L dagger L - 0.5 * <L dagger> * <L> |psi>
+>>>>>>> origin/correct-differential-action
         expectation_value = operator.expectation(collapse_operator, state)
         environment_operator = (
             collapse_operator * np.conjugate(expectation_value)
@@ -77,8 +90,11 @@ def get_deterministic_environment_operator_fn(
             - expectation_value * (0.5 * np.conjugate(expectation_value))
         )
         a = hamiltonian + shift_operator + environment_operator
+<<<<<<< HEAD
         # print(a.basis.metadata())
         # print(state_basis.metadata())
+=======
+>>>>>>> origin/correct-differential-action
 
         assert a.basis.metadata().children[1] == state_basis.metadata(), (
             "Basis mismatch in environment operator"
@@ -109,17 +125,29 @@ def get_pointer_state(condition: SimulationCondition[Any, Any]) -> State:
     """Get the pointer state for the system."""
     initial_state = condition.initial_state
 
+<<<<<<< HEAD
     pointer_state_data = lgmres(
         get_deterministic_environment_operator(
             condition,
             initial_state.basis,
         ),b = ,
+=======
+    pointer_state_data = gmres(  # type: ignore unknown
+        get_deterministic_environment_operator(
+            condition,
+            initial_state.basis,
+        ),
+>>>>>>> origin/correct-differential-action
         b=initial_state.raw_data,
         rtol=1e-6,
         maxiter=1000,
     )
 
+<<<<<<< HEAD
     return State(initial_state.basis, pointer_state_data[0])
+=======
+    return State(initial_state.basis, pointer_state_data[0])  # type: ignore unknown
+>>>>>>> origin/correct-differential-action
 
 
 # The issue - A contains terms like L - <L> |psi> which are not proper operators.
