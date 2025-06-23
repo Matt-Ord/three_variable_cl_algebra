@@ -116,7 +116,7 @@ def get_system_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
 @timed
 def get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     drift_term = get_drift_term()
-    diffusion_term = 0  # get_diffusion_term()
+    diffusion_term = get_diffusion_term()
     expr = drift_term + diffusion_term
     environment_derivative = sp.factor(extract_action(action_from_expr(expr), ty))
 
