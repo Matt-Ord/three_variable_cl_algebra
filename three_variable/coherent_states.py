@@ -20,13 +20,6 @@ from three_variable.symbols import (
 d_alpha = sp.Symbol("d_alpha")
 d_zeta = sp.Symbol("d_zeta")
 
-DIFFERENTIAL_ACTION_A_DAGGER = d_alpha
-DIFFERENTIAL_ACTION_A = alpha + zeta * d_alpha
-DIFFERENTIAL_ACTION_K_PLUS = d_zeta
-DIFFERENTIAL_ACTION_K_MINUS = (
-    0.5 * alpha**2 + 0.5 * zeta + alpha * zeta * d_alpha + zeta**2 * d_zeta
-)
-DIFFERENTIAL_ACTION_K_0 = 0.25 + 0.5 * alpha * d_alpha + zeta * d_zeta
 
 EXPECTATION_D_ALPHA = (sp.conjugate(alpha) + alpha * sp.conjugate(zeta)) / (
     1 - zeta * sp.conjugate(zeta)
@@ -34,6 +27,16 @@ EXPECTATION_D_ALPHA = (sp.conjugate(alpha) + alpha * sp.conjugate(zeta)) / (
 EXPECTATION_D_ZETA = ((sp.conjugate(zeta)) / (2 * (1 - zeta * sp.conjugate(zeta)))) + (
     EXPECTATION_D_ALPHA**2 / 2
 )
+
+
+# Note that these act on the normalized state
+DIFFERENTIAL_ACTION_A_DAGGER = d_alpha
+DIFFERENTIAL_ACTION_A = alpha + zeta * d_alpha
+DIFFERENTIAL_ACTION_K_PLUS = d_zeta
+DIFFERENTIAL_ACTION_K_MINUS = (
+    0.5 * alpha**2 + 0.5 * zeta + alpha * zeta * d_alpha + zeta**2 * d_zeta
+)
+DIFFERENTIAL_ACTION_K_0 = 0.25 + 0.5 * alpha * d_alpha + zeta * d_zeta
 
 
 def action_from_formula(expr: sp.Expr) -> sp.Expr:
@@ -79,7 +82,7 @@ def get_expectation_a() -> sp.Expr:
     a has the differential action of d / dalpha, so
     < a > = d / d alpha (ln(N)).
     """
-    return (alpha + sp.conjugate(alpha) * zeta) / (1 - zeta * sp.conjugate(zeta))
+    return sp.conjugate(EXPECTATION_D_ALPHA)
 
 
 def get_expectation_a_dagger() -> sp.Expr:
@@ -97,9 +100,7 @@ def get_expectation_k_minus() -> sp.Expr:
     K_- has the differential action of d / dzeta, so
     < k_- > = d / dzeta (ln(N)).
     """
-    return (zeta / (2 * (1 - zeta * sp.conjugate(zeta)))) + (
-        get_expectation_a() ** 2 / 2
-    )
+    return sp.conjugate(EXPECTATION_D_ZETA)
 
 
 def get_expectation_k_plus() -> sp.Expr:
