@@ -77,11 +77,20 @@ def plot_uncertainty_against_lambda_w() -> None:
     ) -> np.ndarray[Any, np.dtype[np.floating]]:
         return (1 - 4 * eta_omega) ** 2 / 2
 
+    def get_threshold_from_omega_lower(
+        eta_omega: np.ndarray[Any, np.dtype[np.floating]],
+    ) -> np.ndarray[Any, np.dtype[np.floating]]:
+        return (2 - np.sqrt(2)) / np.abs(
+            (8 - 6 * np.sqrt(2)) + ((2 * np.sqrt(2)) / (4 * eta_omega) ** 2)
+        )
+
     old_lim = ax.get_xlim()
-    threshold_lambda = get_threshold_from_omega(eta_omega)
-    (line,) = ax.plot(threshold_lambda, eta_omega)
+    (line,) = ax.plot(get_threshold_from_omega(eta_omega), eta_omega)
     line.set_label("Classical threshold")
     line.set_color("C5")
+    line.set_linestyle("--")
+    (line,) = ax.plot(get_threshold_from_omega_lower(eta_omega), eta_omega)
+    line.set_color("C6")
     line.set_linestyle("--")
     ax.set_xlim(old_lim)
 
@@ -124,7 +133,7 @@ def plot_uncertainty_against_lambda_w_lower() -> None:
         eta_omega: np.ndarray[Any, np.dtype[np.floating]],
     ) -> np.ndarray[Any, np.dtype[np.floating]]:
         return (2 - np.sqrt(2)) / np.abs(
-            4 + ((2 * np.sqrt(2) - 3) / (2 * eta_omega) ** 2)
+            (8 - 6 * np.sqrt(2)) + ((2 * np.sqrt(2)) / (4 * eta_omega) ** 2)
         )
 
     old_lim = ax.get_xlim()
@@ -133,7 +142,7 @@ def plot_uncertainty_against_lambda_w_lower() -> None:
     line.set_color("C5")
     line.set_linestyle("--")
     (line,) = ax.plot(get_threshold_from_omega_lower(eta_omega), eta_omega)
-    line.set_color("C5")
+    line.set_color("C6")
     line.set_linestyle("--")
     ax.set_xlim(0, old_lim[1])
     ax.set_ylim(0, ax.get_ylim()[1])
