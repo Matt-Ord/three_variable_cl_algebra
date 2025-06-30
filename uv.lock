@@ -6,8 +6,6 @@ requires-python = "==3.13.*"
 overrides = [{ name = "sse-solver", git = "https://github.com/Matt-Ord/sse_solver?subdirectory=sse_solver_py&rev=52228b0" }]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "adsorbate-simulation"
 version = "0.0.1"
 source = { git = "https://github.com/Matt-Ord/adsorbate_simulation?rev=6114583dd5212c9defc3770ac7c7fc1cafcd6536#6114583dd5212c9defc3770ac7c7fc1cafcd6536" }
@@ -24,7 +22,6 @@ plot = [
 ]
 
 [[package]]
->>>>>>> origin/correct-differential-action
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }

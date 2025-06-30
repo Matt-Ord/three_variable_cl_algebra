@@ -16,13 +16,8 @@ dependencies = [
     "scipy>=1.15.1",
     "sympy @ git+https://github.com/Matt-Ord/sympy.git@b9477edd09c48a029cb7cad4e16c346eaa1e7785",
     "slate_core[plot] @ git+https://github.com/Matt-Ord/slate.git@b4744c9f981619ae7a21b526a43159d5c6527539",
-<<<<<<< HEAD
     # "slate_quantum[plot,qutip] @ git+https://github.com/Matt-Ord/slate_quantum.git@1011c95f42e32e5edd48f801986be6e98df739df",
     # "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@6114583dd5212c9defc3770ac7c7fc1cafcd6536",
-=======
-    "slate_quantum[sse_solver_py,plot,qutip] @ git+https://github.com/Matt-Ord/slate_quantum.git@1011c95f42e32e5edd48f801986be6e98df739df",
-    "adsorbate_simulation[plot] @ git+https://github.com/Matt-Ord/adsorbate_simulation@6114583dd5212c9defc3770ac7c7fc1cafcd6536",
->>>>>>> origin/correct-differential-action
 ]
 
 [tool.uv]
