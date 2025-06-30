@@ -70,7 +70,7 @@ def expectation_from_expr_test(action: sp.Expr) -> sp.Expr:
     return expectation_from_action(action_from_expr(action))
 
 
-COMMON_EXPECTATIONS: tuple[sp.Expr, sp.Expr] = [
+COMMON_EXPECTATIONS: list[tuple[sp.Expr, sp.Expr]] = [
     (a_expr, get_expectation_a()),
     (a_dagger_expr, get_expectation_a_dagger()),
     (k_plus_expr, get_expectation_k_plus()),
