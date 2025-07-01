@@ -25,10 +25,11 @@ d_mu = sp.Symbol(r"\partial \mu")
 perturbed_mu = sp.Add(mu, d_mu)
 
 
-initial_state = Ket(r"n_\lambda^\mu")
-state_perturbation = Ket(r"n'_\lambda^\mu")
-other_state = Ket(r"m_\lambda^\mu")
+initial_state = Ket(r"n^\mu")
+state_perturbation = Ket(r"{n'}^\mu")
+other_state = Ket(r"m^\mu")
 perturbed_state = sp.Add(initial_state, sp.Mul(d_mu, state_perturbation))
+orthogonal_state = Ket(r"l^\mu")
 
 initial_lambda = sp.Symbol(r"\lambda^\mu_n")
 other_lambda = sp.Symbol(r"\lambda^\mu_m")
@@ -80,12 +81,19 @@ def simplify_inner_products(expr: sp.Expr) -> sp.Expr:
             sp.Mul(Dagger(initial_state), initial_state): 1,  # type: ignore unknown
             sp.Mul(Dagger(state_perturbation), state_perturbation): 1,  # type: ignore unknown
             sp.Mul(Dagger(other_state), other_state): 1,  # type: ignore unknown
+            sp.Mul(Dagger(orthogonal_state), orthogonal_state): 1,  # type: ignore unknown
             # The initial state is orthogonal to the perturbation
             sp.Mul(Dagger(initial_state), state_perturbation): 0,  # type: ignore unknown
             sp.Mul(Dagger(state_perturbation), initial_state): 0,  # type: ignore unknown
             # The other state is orthogonal to the initial
             sp.Mul(Dagger(other_state), initial_state): 0,  # type: ignore unknown
             sp.Mul(Dagger(initial_state), other_state): 0,  # type: ignore unknown
+            # The orthogonal state is orthogonal to the initial
+            sp.Mul(Dagger(orthogonal_state), initial_state): 0,  # type: ignore unknown
+            sp.Mul(Dagger(initial_state), orthogonal_state): 0,  # type: ignore unknown
+            # The orthogonal state is orthogonal to the other state
+            sp.Mul(Dagger(orthogonal_state), other_state): 0,  # type: ignore unknown
+            sp.Mul(Dagger(other_state), orthogonal_state): 0,  # type: ignore unknown
         }
     )
 
@@ -162,11 +170,11 @@ def get_first_order_perturbation_other_state() -> sp.Expr:
         }
     )
     # Replace all inner products with the initial state
-    return simplify_inner_products(out)  # type: ignore unknown
+    return simplify_inner_products(out)
 
 
 print("B first order terms")
 print("Initial state")
-sp.print_latex(get_first_order_perturbation_initial_state())  # type: ignore unknown
+sp.print_latex(get_first_order_perturbation_initial_state())
 print("Other state")
-sp.print_latex(get_first_order_perturbation_other_state())  # type: ignore unknown
+sp.print_latex(get_first_order_perturbation_other_state())

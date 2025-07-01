@@ -2,9 +2,6 @@ version = 1
 revision = 2
 requires-python = "==3.13.*"
 
-[manifest]
-overrides = [{ name = "sse-solver", git = "https://github.com/Matt-Ord/sse_solver?subdirectory=sse_solver_py&rev=52228b0" }]
-
 [[package]]
 name = "adsorbate-simulation"
 version = "0.0.1"
@@ -452,13 +449,18 @@ name = "three-variable"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "adsorbate-simulation", extra = ["plot"] },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "scipy" },
     { name = "slate-core", extra = ["plot"] },
-    { name = "slate-quantum", extra = ["plot", "qutip", "sse-solver-py"] },
+    { name = "slate-quantum", extra = ["plot", "qutip"] },
     { name = "sympy" },
+]
+
+[package.optional-dependencies]
+simulate = [
+    { name = "adsorbate-simulation", extra = ["plot"] },
+    { name = "slate-quantum", extra = ["plot", "qutip", "sse-solver-py"] },
 ]
 
 [package.dev-dependencies]
@@ -470,14 +472,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adsorbate-simulation", extras = ["plot"], git = "https://github.com/Matt-Ord/adsorbate_simulation?rev=6114583dd5212c9defc3770ac7c7fc1cafcd6536" },
+    { name = "adsorbate-simulation", extras = ["plot"], marker = "extra == 'simulate'", git = "https://github.com/Matt-Ord/adsorbate_simulation?rev=6114583dd5212c9defc3770ac7c7fc1cafcd6536" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "numpy", specifier = ">=2.2.2" },
     { name = "scipy", specifier = ">=1.15.1" },
     { name = "slate-core", extras = ["plot"], git = "https://github.com/Matt-Ord/slate.git?rev=b4744c9f981619ae7a21b526a43159d5c6527539" },
-    { name = "slate-quantum", extras = ["sse-solver-py", "plot", "qutip"], git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df" },
+    { name = "slate-quantum", extras = ["plot", "qutip"], git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df" },
+    { name = "slate-quantum", extras = ["sse-solver-py", "plot", "qutip"], marker = "extra == 'simulate'", git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df" },
     { name = "sympy", git = "https://github.com/Matt-Ord/sympy.git?rev=b9477edd09c48a029cb7cad4e16c346eaa1e7785" },
 ]
+provides-extras = ["simulate"]
 
 [package.metadata.requires-dev]
 dev = [
