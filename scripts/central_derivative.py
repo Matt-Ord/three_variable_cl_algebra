@@ -11,7 +11,7 @@ from three_variable.projected_sse import (
 )
 from three_variable.symbols import alpha
 
-print("The Raw derivaties which describe the alpha parameter:")
+print("The Raw derivatives which describe the alpha parameter:")
 expr_system = sp.simplify(get_system_derivative("alpha"))  # type: ignore subs
 expr_system = expr_system.subs({sp.Symbol("V_1"): 0})  # type: ignore subs
 expr_system = sp.factor(expr_system)  # type: ignore unknown
