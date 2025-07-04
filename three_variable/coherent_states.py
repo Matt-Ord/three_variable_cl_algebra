@@ -13,7 +13,9 @@ from three_variable.symbols import (
     k_0,
     k_minus,
     k_plus,
+    p,
     p_expr,
+    x,
     x_expr,
     zeta,
 )
@@ -154,10 +156,6 @@ expect_p_squared = sp.simplify(expect_p_squared)
 
 uncertainty_squared = expect_p_squared * expect_x_squared
 uncertainty_squared = sp.factor(sp.expand(uncertainty_squared))
-
-
-x = sp.Symbol("x", real=True)
-p = sp.Symbol("p", real=True)
 
 
 def alpha_expression_from_xp(expr: sp.Expr) -> sp.Expr:
