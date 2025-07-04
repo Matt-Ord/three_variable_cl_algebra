@@ -5,6 +5,11 @@ from transformation import (
     get_s_x,
 )
 
+from three_variable.coherent_states import (
+    p,
+    x,
+)
+
 # # Define symbols
 # lambda_, eta_m = sp.symbols("lambda_ eta_m", real=True, positive=True)
 # a = Operator("a")
@@ -42,9 +47,6 @@ from transformation import (
 # Define symbols (real positive where needed)
 m, kB, T, lam, hbar = sp.symbols("m kB T lambda hbar", real=True, positive=True)
 
-# Operators x and p (non-commutative)
-x = sp.Symbol("x", commutative=False)
-p = sp.Symbol("p", commutative=False)
 
 # Define L and L^\dagger
 A = sp.sqrt(4 * m * kB * T * lam / hbar**2)
