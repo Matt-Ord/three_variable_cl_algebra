@@ -390,6 +390,15 @@ wheels = [
 ]
 
 [[package]]
+name = "sdeint"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/6f/8b6eecefd4d5fba57f58edba98f0050a5823e5c42db918600f370274012d/sdeint-0.3.0.tar.gz", hash = "sha256:edee046344abc9350518cc4421e0cd983967cae150d382518bfd84e0306ca64a", size = 39961, upload-time = "2022-07-12T07:44:42.18Z" }
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -455,6 +464,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "scipy" },
+    { name = "sdeint" },
     { name = "slate-core", extra = ["plot"] },
     { name = "slate-quantum", extra = ["plot", "qutip"] },
     { name = "sympy" },
@@ -479,6 +489,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "numpy", specifier = ">=2.2.2" },
     { name = "scipy", specifier = ">=1.15.1" },
+    { name = "sdeint", specifier = ">=0.3.0" },
     { name = "slate-core", extras = ["plot"], git = "https://github.com/Matt-Ord/slate.git?rev=b4744c9f981619ae7a21b526a43159d5c6527539" },
     { name = "slate-quantum", extras = ["plot", "qutip"], git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df" },
     { name = "slate-quantum", extras = ["sse-solver-py", "plot", "qutip"], marker = "extra == 'simulate'", git = "https://github.com/Matt-Ord/slate_quantum.git?rev=1011c95f42e32e5edd48f801986be6e98df739df" },
