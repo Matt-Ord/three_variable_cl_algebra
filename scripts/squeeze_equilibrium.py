@@ -24,6 +24,10 @@ equilibrium_ratio = get_equilibrium_squeeze_ratio()
 sp.print_latex(equilibrium_ratio)
 print()
 
+print("The equilibrium squeeze:")
+squeeze = (1 - equilibrium_ratio) / (equilibrium_ratio + 1)
+squeeze = sp.simplify(squeeze)
+sp.print_latex(squeeze)
 
 print()
 print("Low Friction Limit")
