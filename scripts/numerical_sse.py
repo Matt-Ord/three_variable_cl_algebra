@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sdeint
 import sympy as sp
+from slate_core import plot
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
@@ -17,6 +18,7 @@ from three_variable.projected_sse import (
     get_system_derivative,
 )
 from three_variable.simulation import ELENA_LI_CU, ELENA_NA_CU, TOWNSEND_H_RU
+from three_variable.simulation.physical_systems import EtaParameters, Units
 from three_variable.symbols import (
     KBT,
     alpha,
@@ -102,17 +104,53 @@ expr_environment = get_environment_derivative("zeta")
 
 zeta_derivative = expr_system + expr_environment
 
+# Substitute physical parameters for numerical evaluation
+eta_lambda_value = 1
+eta_m_value = 1
+eta_omega_value = 1
+hbar_value = 1  # Planck's constant in J.s
+KBT_value = 1  # Boltzmann constant in J
+params = EtaParameters(
+    eta_m=1,
+    eta_lambda=1,
+    eta_omega=1,
+    kbt_div_hbar=1,
+)
 
-# # print the symbolic expressions
-# print("Alpha derivative (deterministic):")
-# sp.print_latex(alpha_derivative_deterministic)
-# # sp.print_latex(sp.limit(alpha_derivative_deterministic, zeta, -1))
-# print("Alpha derivative (diffusion):")
-# sp.print_latex(alpha_derivative_diffusion * noise)
-# print("Zeta derivative:")
-# sp.print_latex(zeta_derivative)
+alpha_derivative_deterministic = sp.simplify(
+    alpha_derivative_deterministic.subs(
+        {
+            sp.Symbol("V_1"): 0,
+            eta_lambda: params.eta_lambda,
+            eta_m: params.eta_m,
+            eta_omega: params.eta_omega,
+            KBT: params.kbt_div_hbar * hbar,
+        }
+    )
+)
 
-# input()
+alpha_derivative_diffusion = sp.simplify(
+    alpha_derivative_diffusion.subs(
+        {
+            sp.Symbol("V_1"): 0,
+            eta_lambda: params.eta_lambda,
+            eta_m: params.eta_m,
+            eta_omega: params.eta_omega,
+            KBT: params.kbt_div_hbar * hbar,
+        }
+    )
+)
+zeta_derivative = sp.simplify(
+    zeta_derivative.subs(
+        {
+            sp.Symbol("V_1"): 0,
+            eta_lambda: params.eta_lambda,
+            eta_m: params.eta_m,
+            eta_omega: params.eta_omega,
+            KBT: params.kbt_div_hbar * hbar,
+        }
+    )
+)
 
 # Substitute physical parameters for numerical evaluation
 eta_lambda_value = 0.01
@@ -171,8 +209,9 @@ print("Starting simulation")
 # 7. Solve using Itô interpretation
 sol = sdeint.itoint(f, G, y0, ts)
 
-# ts = np.linspace(0, 0.005, 1000)
-# sol = sdeint.itoint(f, G, sol[-1, :], ts)
+# TODO: also convert (x,p) to si units
+ts = params.units.time_into(ts, Units())
+
 
 # 8. Extract results
 alpha_sol = sol[:, 0]
@@ -192,21 +231,22 @@ print("Simulation completed")
 # print("Final alpha:", alpha_sol[-1])
 print("Final zeta:", zeta_sol[-1])
 # 9. Plot results
+fig, ax = plot.get_figure()
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 1, 1)
-plt.plot(ts, alpha_sol.real, label="Re(α)")
-plt.plot(ts, alpha_sol.imag, label="Im(α)")
-plt.title("Alpha Evolution")
-plt.xlabel("Time")
-plt.ylabel("Alpha")
-plt.legend()
+ax.plot(ts, alpha_sol.real, label="Re(α)")
+ax.plot(ts, alpha_sol.imag, label="Im(α)")
+ax.set_title("Alpha Evolution")
+ax.set_xlabel("Time")
+ax.set_ylabel("Alpha")
+ax.legend()
 plt.subplot(2, 1, 2)
-plt.plot(ts, zeta_sol.real, label="Re(ζ)")
-plt.plot(ts, zeta_sol.imag, label="Im(ζ)")
-plt.title("Zeta Evolution")
-plt.xlabel("Time")
-plt.ylabel("Zeta")
-plt.legend()
+ax.plot(ts, zeta_sol.real, label="Re(ζ)")
+ax.plot(ts, zeta_sol.imag, label="Im(ζ)")
+ax.set_title("Zeta Evolution")
+ax.set_xlabel("Time")
+ax.set_ylabel("Zeta")
+ax.legend()
 plt.tight_layout()
 plt.grid()
 plt.savefig("alpha_zeta_evolution.png", dpi=300)
