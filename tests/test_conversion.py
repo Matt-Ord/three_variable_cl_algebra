@@ -5,6 +5,14 @@ import sympy as sp
 from sympy.physics.units import hbar
 
 from tests.util import expression_equals
+from three_variable.coherent_states import (
+    alpha_expression_from_xp,
+    expect_p,
+    expect_x,
+    p,
+    x,
+    xp_expression_from_alpha,
+)
 from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
@@ -13,6 +21,7 @@ from three_variable.equilibrium_squeeze import (
 from three_variable.symbols import (
     a_dagger_expr,
     a_expr,
+    alpha,
     dimensionless_from_full,
     expr_from_formula,
     formula_from_expr,
@@ -89,4 +98,15 @@ def test_conversion_formula() -> None:
     )
     assert expression_equals(
         formula_from_expr(p_expr**2 / hbar**2), -k_plus - k_minus + 2 * k_0
+    )
+
+
+def test_xp_from_alpha() -> None:
+    """Test the conversion between x, p and alpha."""
+    assert expression_equals(x, xp_expression_from_alpha(expect_x))
+    assert expression_equals(p, xp_expression_from_alpha(expect_p))
+
+    expr = alpha + zeta * sp.conjugate(alpha)
+    assert expression_equals(
+        expr, alpha_expression_from_xp(xp_expression_from_alpha(expr))
     )

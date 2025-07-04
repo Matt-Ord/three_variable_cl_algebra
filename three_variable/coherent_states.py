@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cache
 from typing import Literal
 
 import sympy as sp
@@ -153,3 +154,47 @@ expect_p_squared = sp.simplify(expect_p_squared)
 
 uncertainty_squared = expect_p_squared * expect_x_squared
 uncertainty_squared = sp.factor(sp.expand(uncertainty_squared))
+
+
+x = sp.Symbol("x", real=True)
+p = sp.Symbol("p", real=True)
+
+
+def alpha_expression_from_xp(expr: sp.Expr) -> sp.Expr:
+    """Convert an expression in terms of x and p to an expression in terms of alpha."""
+    return sp.simplify(expr.subs({x: expect_x, p: expect_p}))
+
+
+@cache
+def _get_inverse_xp_expectation() -> tuple[sp.Expr, sp.Expr]:
+    # Note here we scale by sqrt 2 to prevent solver from converting to a decimal
+    solutions = sp.solve(
+        [sp.Eq(x, expect_x / sp.sqrt(2)), sp.Eq(p, expect_p / sp.sqrt(2))],  # type: ignore unknown
+        (alpha, sp.conjugate(alpha)),  # type: ignore unknown
+    )
+    return (
+        sp.simplify(
+            sp.simplify(solutions[alpha], rational=True)  # type: ignore unknown
+            / sp.sqrt(2)
+        ),
+        sp.simplify(
+            sp.simplify(
+                solutions[sp.conjugate(alpha)],  # type: ignore unknown
+                rational=True,
+            )
+            / sp.sqrt(2)
+        ),
+    )
+
+
+def xp_expression_from_alpha(expr: sp.Expr) -> sp.Expr:
+    """Convert an expression in terms of alpha to an expression in terms of x and p."""
+    alpha_expect, alpha_conjugate_expect = _get_inverse_xp_expectation()
+    return sp.simplify(
+        expr.subs(
+            {
+                alpha: alpha_expect,
+                sp.conjugate(alpha): alpha_conjugate_expect,
+            }
+        )
+    )
