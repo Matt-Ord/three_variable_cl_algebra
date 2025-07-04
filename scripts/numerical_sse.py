@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sdeint
 import sympy as sp
-from slate_core import plot
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
@@ -105,11 +104,6 @@ expr_environment = get_environment_derivative("zeta")
 zeta_derivative = expr_system + expr_environment
 
 # Substitute physical parameters for numerical evaluation
-eta_lambda_value = 1
-eta_m_value = 1
-eta_omega_value = 1
-hbar_value = 1  # Planck's constant in J.s
-KBT_value = 1  # Boltzmann constant in J
 params = EtaParameters(
     eta_m=1,
     eta_lambda=1,
@@ -228,25 +222,23 @@ dxdt = np.gradient(x_sol, ts)
 dpdt = np.gradient(p_sol, ts)
 
 print("Simulation completed")
-# print("Final alpha:", alpha_sol[-1])
 print("Final zeta:", zeta_sol[-1])
 # 9. Plot results
-fig, ax = plot.get_figure()
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 1, 1)
-ax.plot(ts, alpha_sol.real, label="Re(α)")
-ax.plot(ts, alpha_sol.imag, label="Im(α)")
-ax.set_title("Alpha Evolution")
-ax.set_xlabel("Time")
-ax.set_ylabel("Alpha")
-ax.legend()
+plt.plot(ts, alpha_sol.real, label="Re(α)")
+plt.plot(ts, alpha_sol.imag, label="Im(α)")
+plt.title("Alpha Evolution")
+plt.xlabel("Time")
+plt.ylabel("Alpha")
+plt.legend()
 plt.subplot(2, 1, 2)
-ax.plot(ts, zeta_sol.real, label="Re(ζ)")
-ax.plot(ts, zeta_sol.imag, label="Im(ζ)")
-ax.set_title("Zeta Evolution")
-ax.set_xlabel("Time")
-ax.set_ylabel("Zeta")
-ax.legend()
+plt.plot(ts, zeta_sol.real, label="Re(ζ)")
+plt.plot(ts, zeta_sol.imag, label="Im(ζ)")
+plt.title("Zeta Evolution")
+plt.xlabel("Time")
+plt.ylabel("Zeta")
+plt.legend()
 plt.tight_layout()
 plt.grid()
 plt.savefig("alpha_zeta_evolution.png", dpi=300)
