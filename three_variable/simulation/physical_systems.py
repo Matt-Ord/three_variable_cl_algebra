@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, overload
 
 import numpy as np
 from scipy.constants import (  # type: ignore scipy
@@ -12,11 +13,108 @@ from scipy.constants import (  # type: ignore scipy
 )
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
+class Units:
+    time_factor: float = 1.0
+    length_factor: float = 1.0
+
+    @overload
+    def length_into(self, value: float, units: Units) -> float: ...
+    @overload
+    def length_into[DT: np.dtype[np.number]](
+        self, value: np.ndarray[Any, DT], units: Units
+    ) -> np.ndarray[Any, DT]: ...
+    def length_into(
+        self, value: float | np.ndarray[Any, np.dtype[np.number]], units: Units
+    ) -> float | np.ndarray[Any, np.dtype[np.number]]:
+        return value * (self.length_factor / units.length_factor)
+
+    @overload
+    def time_into(self, value: float, units: Units) -> float: ...
+    @overload
+    def time_into[DT: np.dtype[np.number]](
+        self, value: np.ndarray[Any, DT], units: Units
+    ) -> np.ndarray[Any, DT]: ...
+    def time_into(
+        self, value: float | np.ndarray[Any, np.dtype[np.number]], units: Units
+    ) -> float | np.ndarray[Any, np.dtype[np.number]]:
+        """Convert a time from SI units to the system's units."""
+        return value * (self.time_factor / units.time_factor)
+
+    @overload
+    def frequency_into(self, value: float, units: Units) -> float: ...
+    @overload
+    def frequency_into[DT: np.dtype[np.number]](
+        self, value: np.ndarray[Any, DT], units: Units
+    ) -> np.ndarray[Any, DT]: ...
+    def frequency_into(
+        self, value: float | np.ndarray[Any, np.dtype[np.number]], units: Units
+    ) -> float | np.ndarray[Any, np.dtype[np.number]]:
+        """Convert a frequency from SI units to the system's units."""
+        return value * (self.time_factor / units.time_factor) ** -1
+
+
+@dataclass(frozen=True, kw_only=True)
 class EtaParameters:
     eta_m: float
     eta_lambda: float
     eta_omega: float
+    kbt_div_hbar: float
+    units: Units = Units()
+
+    @property
+    def temperature(self) -> float:
+        return self.units.frequency_into(self.kbt_div_hbar, Units()) * (
+            hbar / Boltzmann
+        )
+
+    @property
+    def m(self) -> float:
+        eta_m = self.units.length_into(self.eta_m, Units())
+        kb_t_div_hbar = self.units.frequency_into(self.kbt_div_hbar, Units())
+        return eta_m * (hbar / 2) / kb_t_div_hbar
+
+    @property
+    def lambda_(self) -> float:
+        return self.units.frequency_into(self.kbt_div_hbar / self.eta_lambda, Units())
+
+    @property
+    def omega(self) -> float:
+        return self.units.frequency_into(self.kbt_div_hbar / self.eta_omega, Units())
+
+    @property
+    def base_parameters(self) -> BaseParameters:
+        return BaseParameters(
+            m=self.m,
+            lambda_=self.lambda_,
+            omega=self.omega,
+            temperature=self.temperature,
+        )
+
+    def with_units(self, units: Units) -> EtaParameters:
+        """Return a copy of the parameters with new units."""
+        return EtaParameters(
+            eta_m=self.units.length_into(self.kbt_div_hbar, units),
+            eta_lambda=self.eta_lambda,
+            eta_omega=self.eta_omega,
+            kbt_div_hbar=self.units.time_into(self.kbt_div_hbar, units),
+            units=units,
+        )
+
+    def to_normalized(self) -> EtaParameters:
+        """Return a normalized version of the parameters."""
+        new_units = Units(length_factor=self.eta_m, time_factor=1 / self.kbt_div_hbar)
+        assert self.units.frequency_into(self.kbt_div_hbar, new_units) == 1
+        assert self.units.length_into(self.eta_m, new_units) == 1
+        out = EtaParameters(
+            eta_m=self.units.length_into(self.eta_m, new_units),
+            eta_lambda=self.eta_lambda,
+            eta_omega=self.eta_omega,
+            kbt_div_hbar=self.units.frequency_into(self.kbt_div_hbar, new_units),
+            units=new_units,
+        )
+        assert out.temperature == self.temperature
+        return out
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -28,10 +126,16 @@ class BaseParameters:
 
     @property
     def eta_parameters(self) -> EtaParameters:
-        eta_m = Boltzmann * self.temperature / (hbar**2 / (2 * self.m))
-        eta_lambda = Boltzmann * self.temperature / (self.lambda_ * hbar)
-        eta_omega = Boltzmann * self.temperature / (hbar * self.omega)
-        return EtaParameters(eta_m=eta_m, eta_lambda=eta_lambda, eta_omega=eta_omega)
+        kbt_div_hbar = Boltzmann * self.temperature / hbar
+        eta_m = kbt_div_hbar / (hbar / (2 * self.m))
+        eta_lambda = kbt_div_hbar / self.lambda_
+        eta_omega = kbt_div_hbar / self.omega
+        return EtaParameters(
+            eta_m=eta_m,
+            eta_lambda=eta_lambda,
+            eta_omega=eta_omega,
+            kbt_div_hbar=kbt_div_hbar,
+        )
 
     def with_temperature(self, temperature: float) -> BaseParameters:
         return BaseParameters(

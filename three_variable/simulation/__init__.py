@@ -34,6 +34,11 @@ except ImportError:
         raise ImportError(msg)
 
 
+from three_variable.simulation._projected_equations import (
+    SimulationConfig,
+    SimulationResult,
+    run_projected_simulation,
+)
 from three_variable.simulation.physical_systems import (
     ELENA_CU_LATTICE_PARAMETER,
     ELENA_LI_CU,
@@ -60,5 +65,8 @@ __all__ = [
     "BaseParameters",
     "ElenaParameters",
     "EtaParameters",
+    "SimulationConfig",
+    "SimulationResult",
     "get_condition_from_params",
+    "run_projected_simulation",
 ]
