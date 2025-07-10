@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import itertools
-
 import sympy as sp
 
 from three_variable.coherent_states import p, x, xp_expression_from_alpha
@@ -9,8 +7,8 @@ from three_variable.equilibrium_squeeze import get_equilibrium_squeeze_ratio
 from three_variable.symbols import alpha, eta_lambda, zeta
 
 equilibrium_ratio = get_equilibrium_squeeze_ratio()
-low_friction = equilibrium_ratio.lseries(eta_lambda, sp.oo)  # type: ignore sp
-R_expr = sum(sp.simplify(e) for e in itertools.islice(low_friction, 1))  # type: ignore sp
+classical_ratio = sp.limit(equilibrium_ratio, eta_lambda, sp.oo)
+classical_zeta = (1 - classical_ratio) / (1 + classical_ratio)
 
 
 F = sp.Symbol("F", complex=True)
@@ -23,16 +21,8 @@ dx_dt = dalpha_dt / sp.sqrt(2) + dalpha_conj_dt / sp.sqrt(2)
 dp_dt = 1j * dalpha_dt / sp.sqrt(2) - 1j * dalpha_conj_dt / sp.sqrt(2)
 
 
-dx_dt = xp_expression_from_alpha(dx_dt).subs(
-    {
-        zeta: (1 - R_expr) / (1 + R_expr),
-    }
-)
-dp_dt = xp_expression_from_alpha(dp_dt).subs(
-    {
-        zeta: (1 - R_expr) / (1 + R_expr),
-    }
-)
+dx_dt = xp_expression_from_alpha(dx_dt).subs({zeta: classical_zeta})
+dp_dt = xp_expression_from_alpha(dp_dt).subs({zeta: classical_zeta})
 
 
 dx_dt_collected = sp.collect(sp.simplify(dx_dt), [x, p])  # type: ignore collect
