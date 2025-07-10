@@ -9,21 +9,16 @@ import sympy as sp
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
-    action_from_expr,
     expect_p,
     expect_x,
-    extract_action,
 )
 from three_variable.projected_sse import (
-    get_diffusion_term,
-    get_environment_derivative,
     get_full_derivative,
-    get_system_derivative,
+    get_stochastic_derivative,
 )
 from three_variable.symbols import (
     KBT,
     alpha,
-    dimensionless_from_full,
     eta_lambda,
     eta_m,
     eta_omega,
@@ -87,18 +82,12 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
                 eta_m: params.eta_m,
                 eta_omega: params.eta_omega,
                 KBT: params.kbt_div_hbar * hbar,
+                noise: 0,
             }
         )
     )
 
-    alpha_derivative_diffusion = get_diffusion_term()
-    alpha_derivative_diffusion = sp.factor(
-        extract_action(action_from_expr(alpha_derivative_diffusion), "alpha")
-    )
-    alpha_derivative_diffusion = sp.simplify(
-        dimensionless_from_full(alpha_derivative_diffusion),
-        rational=True,
-    )
+    alpha_derivative_diffusion = get_stochastic_derivative("alpha")
     alpha_derivative_diffusion = sp.simplify(
         alpha_derivative_diffusion.subs(
             {
@@ -107,30 +96,31 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
                 eta_m: params.eta_m,
                 eta_omega: params.eta_omega,
                 KBT: params.kbt_div_hbar * hbar,
+                noise: 1,
             }
         )
     )
 
-    expr_system = get_system_derivative("zeta")
-    expr_environment = get_environment_derivative("zeta")
-
-    zeta_derivative = expr_system + expr_environment
-    zeta_derivative = sp.simplify(
-        zeta_derivative.subs(
+    zeta_derivative_deterministic = get_full_derivative("zeta")
+    zeta_derivative_deterministic = sp.simplify(
+        zeta_derivative_deterministic.subs(
             {
                 sp.Symbol("V_1"): 0,
                 eta_lambda: params.eta_lambda,
                 eta_m: params.eta_m,
                 eta_omega: params.eta_omega,
                 KBT: params.kbt_div_hbar * hbar,
+                noise: 0,
             }
         )
     )
 
     # Generate a matrix equation for the drift and diffusion terms
     # And turn them into numpy ufuncs for the stochastic differential equation solver
-    drift_expr = sp.Matrix([alpha_derivative_deterministic, zeta_derivative])
-    diff_expr = sp.Matrix([[alpha_derivative_diffusion.subs(noise, 1), 0], [0, 0]])
+    drift_expr = sp.Matrix(
+        [alpha_derivative_deterministic, zeta_derivative_deterministic]
+    )
+    diff_expr = sp.Matrix([[alpha_derivative_diffusion, 0], [0, 0]])
 
     t = sp.Symbol("t", real=True)
     drift_func = sp.lambdify((t, sp.Matrix([alpha, zeta])), drift_expr, modules="numpy")  # type: ignore[no-redef]
