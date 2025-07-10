@@ -69,51 +69,36 @@ class SimulationConfig:
     times: np.ndarray[Any, np.dtype[np.float64]]
 
 
+def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr:
+    """Convert a dimensionless value to explicit units."""
+    return sp.simplify(
+        expr.subs(
+            {
+                sp.Symbol("V_1"): 0,
+                eta_lambda: params.eta_lambda,
+                eta_m: params.eta_m,
+                eta_omega: params.eta_omega,
+                KBT: params.kbt_div_hbar * hbar,
+            }
+        )
+    )
+
+
 def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     y0 = np.array([config.alpha_0, config.zeta_0], dtype=np.complex128)
     params = config.params
 
-    alpha_derivative_deterministic = get_full_derivative("alpha")
-    alpha_derivative_deterministic = sp.simplify(
-        alpha_derivative_deterministic.subs(
-            {
-                sp.Symbol("V_1"): 0,
-                eta_lambda: params.eta_lambda,
-                eta_m: params.eta_m,
-                eta_omega: params.eta_omega,
-                KBT: params.kbt_div_hbar * hbar,
-                noise: 0,
-            }
-        )
-    )
+    alpha_derivative_deterministic = explicit_from_dimensionless(
+        get_full_derivative("alpha"), params
+    ).subs(noise, 0)
 
-    alpha_derivative_diffusion = get_stochastic_derivative("alpha")
-    alpha_derivative_diffusion = sp.simplify(
-        alpha_derivative_diffusion.subs(
-            {
-                sp.Symbol("V_1"): 0,
-                eta_lambda: params.eta_lambda,
-                eta_m: params.eta_m,
-                eta_omega: params.eta_omega,
-                KBT: params.kbt_div_hbar * hbar,
-                noise: 1,
-            }
-        )
-    )
+    alpha_derivative_diffusion = explicit_from_dimensionless(
+        get_stochastic_derivative("alpha"), params
+    ).subs(noise, 1)
 
-    zeta_derivative_deterministic = get_full_derivative("zeta")
-    zeta_derivative_deterministic = sp.simplify(
-        zeta_derivative_deterministic.subs(
-            {
-                sp.Symbol("V_1"): 0,
-                eta_lambda: params.eta_lambda,
-                eta_m: params.eta_m,
-                eta_omega: params.eta_omega,
-                KBT: params.kbt_div_hbar * hbar,
-                noise: 0,
-            }
-        )
-    )
+    zeta_derivative_deterministic = explicit_from_dimensionless(
+        get_full_derivative("zeta"), params
+    ).subs(noise, 0)
 
     # Generate a matrix equation for the drift and diffusion terms
     # And turn them into numpy ufuncs for the stochastic differential equation solver

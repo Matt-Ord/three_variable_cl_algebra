@@ -37,6 +37,7 @@ except ImportError:
 from three_variable.simulation._projected_equations import (
     SimulationConfig,
     SimulationResult,
+    explicit_from_dimensionless,
     run_projected_simulation,
 )
 from three_variable.simulation.physical_systems import (
@@ -67,6 +68,7 @@ __all__ = [
     "EtaParameters",
     "SimulationConfig",
     "SimulationResult",
+    "explicit_from_dimensionless",
     "get_condition_from_params",
     "run_projected_simulation",
 ]

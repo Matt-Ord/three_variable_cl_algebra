@@ -127,6 +127,13 @@ def get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     )
 
 
+def get_deterministic_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
+    system_derivative = get_system_derivative(ty)
+    environment_derivative = get_environment_derivative(ty)
+    stochastic_derivative = get_stochastic_derivative(ty)
+    return system_derivative + environment_derivative + stochastic_derivative
+
+
 @cache
 @timed
 def get_stochastic_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
@@ -141,7 +148,6 @@ def get_stochastic_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
 @cache
 @timed
 def get_full_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
-    system_derivative = get_system_derivative(ty)
-    environment_derivative = get_environment_derivative(ty)
+    deterministic_derivative = get_deterministic_derivative(ty)
     stochastic_derivative = get_stochastic_derivative(ty)
-    return system_derivative + environment_derivative + stochastic_derivative
+    return deterministic_derivative + stochastic_derivative

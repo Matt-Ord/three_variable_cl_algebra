@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import cache
+from typing import Literal
 
 import numpy as np
 import sympy as sp
@@ -12,6 +13,7 @@ from sympy.physics.units import hbar
 from three_variable.coherent_states import expect_x_squared, uncertainty_squared
 from three_variable.projected_sse import (
     get_environment_derivative,
+    get_full_derivative,
     get_system_derivative,
 )
 from three_variable.symbols import eta_lambda, eta_m, eta_omega, zeta
@@ -43,12 +45,29 @@ def get_squeeze_derivative() -> sp.Expr:
     return sp.factor_terms(expr_r_system + expr_r_environment, fraction=True)
 
 
-@timed
 @cache
 def get_equilibrium_squeeze_ratio(*, positive: bool = True) -> sp.Expr:
     factored = get_squeeze_derivative()
     numer, _denom = sp.together(factored).as_numer_denom()
     return sp.solve(numer, squeeze_ratio)[0 if positive else 1]
+
+
+def get_equilibrium_zeta(*, positive: bool = True) -> sp.Expr:
+    ratio = get_equilibrium_squeeze_ratio(positive=positive)
+    zeta_expr = sp.solve(ratio_expr - squeeze_ratio, zeta)[0]
+    return sp.simplify(zeta_expr.subs({squeeze_ratio: ratio}))
+
+
+@timed
+@cache
+def get_equilibrium_derivative(ty: Literal["zeta", "alpha"]) -> sp.Expr:
+    """Get the derivative for the system at equilibrium."""
+    if ty == "zeta":
+        return sp.Integer(0)
+    if ty == "alpha":
+        equilibrium_zeta = get_equilibrium_zeta(positive=True)
+        return get_full_derivative("alpha").subs({zeta: equilibrium_zeta})
+    return None
 
 
 _eta_m_symbol = eta_m
