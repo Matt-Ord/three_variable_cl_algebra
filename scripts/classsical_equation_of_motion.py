@@ -27,23 +27,73 @@ def get_explicit_equilibrium_derivative(
     return explicit_from_dimensionless(get_equilibrium_derivative(ty), params)
 
 
+def get_classical_deterministic_derivative(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
+
+    return sp.simplify(
+        expect_var.subs(
+            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
+        ),
+        rational=True,
+    )
+
+
+def get_classical_stochastic_derivative(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
+
+    return sp.simplify(
+        expect_var.subs(
+            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
+        ),
+        rational=True,
+    )
+
+
+LOW_FRICTION_ZETA = sp.limit(get_equilibrium_zeta(positive=True), eta_lambda, sp.oo)
+
+
+def get_low_temperature_equilibrium_value(expr: sp.Expr) -> sp.Expr:
+    """Get the equilibrium value of an expression at low friction."""
+    # Take the power to leading order in 1 / eta_lambda, since at infinity
+    # the stochastic term is zero!
+    temp_symbol = sp.Symbol("inverse_eta_lambda", positive=True, real=True)
+
+    return sp.simplify(
+        next(
+            expr.subs({zeta: LOW_FRICTION_ZETA})
+            .subs(eta_lambda, 1 / temp_symbol)  # type: ignore unknown
+            .lseries(temp_symbol),
+            sp.Number(0),
+        ).subs(temp_symbol, 1 / eta_lambda)
+    )
+
+
 def get_low_friction_equilibrium_derivative(
     ty: Literal["zeta", "alpha", "phi"],
 ) -> sp.Expr:
-    """Get the classical equilibrium derivative for the system."""
-    equilibrium_zeta = sp.limit(get_equilibrium_zeta(positive=True), eta_lambda, sp.oo)
+    deterministic = get_deterministic_derivative(ty)
+    deterministic = get_low_temperature_equilibrium_value(deterministic)
 
-    deterministic = get_deterministic_derivative(ty).subs({zeta: equilibrium_zeta})
-    deterministic = sp.limit(deterministic, eta_lambda, sp.oo)
-
-    stochastic = get_stochastic_derivative(ty).subs({zeta: equilibrium_zeta})
-    # Take the power to leading order in 1 / eta_lambda, since at infinity
-    # the stochastic term is zero!
-    stochastic = sp.simplify(
-        stochastic.subs(eta_lambda, 1 / eta_lambda)
-        .as_leading_term(eta_lambda)
-        .subs(eta_lambda, 1 / eta_lambda)  # type: ignore unknown
-    )
+    stochastic = get_stochastic_derivative(ty)
+    stochastic = get_low_temperature_equilibrium_value(stochastic)
     return deterministic + stochastic
 
 
@@ -57,24 +107,21 @@ sp.print_latex(
     )
 )
 
-# Now calculate the x and p derivatives at low friction
-low_friction_zeta = sp.limit(get_equilibrium_zeta(positive=True), eta_lambda, sp.oo)
 
-# Split the alpha derivative into real and imaginary parts, and replace
-# alpha with x and p expressions.
-alpha_derivative_in_xp = xp_expression_from_alpha(low_friction_alpha_derivative).subs(
-    zeta, low_friction_zeta
-)
-re_alpha_derivative = sp.simplify(sp.re(alpha_derivative_in_xp))
-im_alpha_derivative = sp.simplify(sp.im(alpha_derivative_in_xp))
+def get_classical_low_friction_equilibrium_derivative(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    deterministic = get_classical_deterministic_derivative(ty)
+    deterministic = get_low_temperature_equilibrium_value(deterministic)
 
-# Write <x> and <p> in terms of the real and imaginary parts of alpha.
-# Then replace re(alpha) and im(alpha) with their derivatives.
-# This gives us d/dt <x> etc, since zeta is constant at equilibrium.
-low_friction_x_derivative = sp.simplify(
-    expect_x.subs({zeta: low_friction_zeta, alpha: sp.re(alpha) + 1j * sp.im(alpha)}),
-    rational=True,
-).subs({sp.re(alpha): re_alpha_derivative, sp.im(alpha): im_alpha_derivative})
+    stochastic = get_classical_stochastic_derivative(ty)
+    stochastic = get_low_temperature_equilibrium_value(stochastic)
+    return deterministic + stochastic
+
+
+# Now we calculate the x and p derivatives at low friction
+low_friction_x_derivative = get_classical_low_friction_equilibrium_derivative("x")
+low_friction_x_derivative = low_friction_x_derivative.subs(sp.Symbol("V_1"), 0)
 sp.print_latex(
     sp.Eq(  # type: ignore unknown
         sp.Symbol(r"\frac{dx}{dt}"),
@@ -82,10 +129,8 @@ sp.print_latex(
     )
 )
 
-low_friction_p_derivative = sp.simplify(
-    expect_p.subs({zeta: low_friction_zeta, alpha: sp.re(alpha) + 1j * sp.im(alpha)}),
-    rational=True,
-).subs({sp.re(alpha): re_alpha_derivative, sp.im(alpha): im_alpha_derivative})
+low_friction_p_derivative = get_classical_low_friction_equilibrium_derivative("p")
+low_friction_p_derivative = low_friction_p_derivative.subs(sp.Symbol("V_1"), 0)
 sp.print_latex(
     sp.Eq(  # type: ignore unknown
         sp.Symbol(r"\frac{dp}{dt}"),
