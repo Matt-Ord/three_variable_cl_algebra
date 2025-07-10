@@ -70,7 +70,7 @@ im_alpha_derivative = sp.simplify(sp.im(alpha_derivative_in_xp))
 
 # Write <x> and <p> in terms of the real and imaginary parts of alpha.
 # Then replace re(alpha) and im(alpha) with their derivatives.
-# This gives us d/dt <x> etc, since zeta is constant at low friction.
+# This gives us d/dt <x> etc, since zeta is constant at equilibrium.
 low_friction_x_derivative = sp.simplify(
     expect_x.subs({zeta: low_friction_zeta, alpha: sp.re(alpha) + 1j * sp.im(alpha)}),
     rational=True,
