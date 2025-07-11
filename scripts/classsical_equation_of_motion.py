@@ -112,7 +112,7 @@ print()
 def group_x_p_terms(expr: sp.Expr) -> sp.Expr:
     """Group the x and p terms in an expression."""
     terms = Add.make_args(sp.collect(sp.expand(expr), [x, p]))
-    return sum(sp.simplify(term) for term in terms)
+    return sum(sp.simplify(term) for term in terms)  # type: ignore unknown
 
 
 def get_classical_low_friction_equilibrium_derivative(
