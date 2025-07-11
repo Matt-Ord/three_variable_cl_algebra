@@ -104,4 +104,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
-dev = ["ruff", "pytest>=8.3.4", "pyright ==1.1.400"]
+dev = ["ruff", "pytest>=8.3.4", "pyright==1.1.403"]
