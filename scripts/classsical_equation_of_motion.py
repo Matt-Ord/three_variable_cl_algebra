@@ -90,7 +90,6 @@ def get_low_friction_equilibrium_derivative(
     ty: Literal["zeta", "alpha", "phi"],
 ) -> sp.Expr:
     deterministic = get_deterministic_derivative(ty)
-    sp.print_latex(deterministic)
     deterministic = get_low_temperature_equilibrium_value(deterministic)
 
     stochastic = get_stochastic_derivative(ty)
