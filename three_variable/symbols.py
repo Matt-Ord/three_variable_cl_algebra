@@ -24,8 +24,8 @@ alpha = sp.Symbol(r"\alpha")
 zeta = sp.Symbol(r"\zeta", real=False)
 
 # position and momentum
-x = sp.Symbol("x", real=True)
-p = sp.Symbol("p", real=True)
+x = sp.Symbol(r"\expect{x}", real=True)
+p = sp.Symbol(r"\expect{p}", real=True)
 
 # Dimensionless Parameters for the squeezing operator analysis
 eta_m = sp.Symbol("eta_m", real=True, positive=True)
