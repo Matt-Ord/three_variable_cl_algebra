@@ -1,4 +1,3 @@
-# Dimensionless Parameters for the squeezing operator analysis
 from __future__ import annotations
 
 from functools import cache
@@ -34,7 +33,7 @@ def zeta_from_squeeze_ratio_expr(expr: sp.Expr) -> sp.Expr:
 
 
 @timed
-def get_squeeze_derivative() -> sp.Expr:
+def get_squeeze_derivative_zeta() -> sp.Expr:
     """Get the squeeze derivative with respect to zeta."""
     expr_system = get_system_derivative("zeta")
     expr_environment = get_environment_derivative("zeta")
@@ -47,7 +46,7 @@ def get_squeeze_derivative() -> sp.Expr:
 
 @cache
 def get_equilibrium_squeeze_ratio(*, positive: bool = True) -> sp.Expr:
-    factored = get_squeeze_derivative()
+    factored = get_squeeze_derivative_zeta()
     numer, _denom = sp.together(factored).as_numer_denom()
     return sp.solve(numer, squeeze_ratio)[0 if positive else 1]
 
