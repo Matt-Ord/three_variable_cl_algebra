@@ -26,7 +26,6 @@ from three_variable.symbols import (
     a_expr,
     alpha,
     dimensionless_from_full,
-    eta_m,
     lambda_,
     m,
     m_from_eta_m,
@@ -44,20 +43,25 @@ def _get_lindblad_operator_raw() -> sp.Expr:
     )
 
 
-def _get_lindblad_operator_simple() -> sp.Expr:
-    return sp.sqrt(lambda_ / (4 * eta_m)) * (
-        (2 * eta_m - 1) * a_dagger_expr + (2 * eta_m + 1) * a_expr
+def _simplify_linear_operator(expr: sp.Expr) -> sp.Expr:
+    """Simplify the linear operator expression."""
+    a_dagger_symbol = sp.Symbol(r"a^\dagger")
+    a_symbol = sp.Symbol(r"a")
+    return sp.simplify(
+        sp.collect(
+            sp.expand(expr.subs({a_dagger_expr: a_dagger_symbol, a_expr: a_symbol})),
+            [a_dagger_symbol, a_symbol],
+        ).subs({a_dagger_symbol: a_dagger_expr, a_symbol: a_expr}),
+        rational=True,
     )
 
 
 @cache
 def get_lindblad_operator() -> sp.Expr:
     # Sanity check - does the raw and simple form of the lindblad operator match?
-    raw = _get_lindblad_operator_raw().subs({m: m_from_eta_m})
-    simple = _get_lindblad_operator_simple()
-    diff = sp.simplify(sp.expand(raw - simple))
-    assert diff == 0
-    return simple
+    return _simplify_linear_operator(
+        _get_lindblad_operator_raw().subs({m: m_from_eta_m})
+    )
 
 
 @cache
