@@ -3,12 +3,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import sympy as sp
-from classical_equation_of_motion import (
-    get_classical_equilibrium_derivative,
-)
 from plot_coefficients import plot_2d_real_imag_heatmaps
 from sympy.physics.units import hbar
 
+from scripts.effective_mass_plot import (
+    get_classical_equilibrium_derivative,
+)
 from three_variable.equilibrium_squeeze import (
     get_equilibrium_squeeze_ratio,
     get_equilibrium_zeta,

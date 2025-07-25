@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-import itertools
-from functools import cache
 from typing import Literal
 
 import sympy as sp
 from sympy import Add
 
-from three_variable.coherent_states import expect_p, expect_x, xp_expression_from_alpha
 from three_variable.equilibrium_squeeze import (
     get_equilibrium_derivative,
-    get_equilibrium_squeeze_ratio,
     get_equilibrium_zeta,
-    squeeze_ratio,
-    squeeze_ratio_from_zeta_expr,
 )
 from three_variable.projected_sse import (
+    get_classical_deterministic_derivative,
+    get_classical_stochastic_derivative,
     get_deterministic_derivative,
     get_stochastic_derivative,
 )
@@ -23,18 +19,7 @@ from three_variable.simulation import (
     EtaParameters,
     explicit_from_dimensionless,
 )
-from three_variable.symbols import (
-    alpha,
-    eta_lambda,
-    eta_omega,
-    noise,
-    p,
-    x,
-    zeta,
-)
-
-alpha_coeff_alpha = sp.Symbol("alpha_coeff_alpha", complex=True)
-alpha_coeff_alpha_bar = sp.Symbol("alpha_coeff_alpha_bar", complex=True)
+from three_variable.symbols import eta_lambda, eta_omega, p, x, zeta
 
 
 def get_explicit_equilibrium_derivative(
@@ -44,200 +29,32 @@ def get_explicit_equilibrium_derivative(
     return explicit_from_dimensionless(get_equilibrium_derivative(ty), params)
 
 
-def get_classical_deterministic_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
-
-    return sp.simplify(
-        expect_var.subs(
-            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
-        ),
-        rational=True,
-    )
+LOW_FRICTION_ZETA = sp.limit(get_equilibrium_zeta(positive=True), eta_lambda, sp.oo)
 
 
-def get_classical_deterministic_derivative_complex_conj_pair(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def get_classical_deterministic_derivative_complex_conj_pair_ratio(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(
-        squeeze_ratio_from_zeta_expr(get_deterministic_derivative("alpha"))
-    )
-    derivative_xp = squeeze_ratio_from_zeta_expr(derivative_xp)
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def get_classical_deterministic_derivative_complex_conj_pair_symbol_coefficient(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(
-        alpha_coeff_alpha * alpha + alpha_coeff_alpha_bar * sp.conjugate(alpha)
-    )
-
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def expr_from_coeff(expr: sp.Expr) -> sp.Expr:
-    # substitute the coefficients of alpha and alpha_bar in derivatives from the deterministic equations
-    alpha_derivative_deterministic = get_deterministic_derivative("alpha").subs(
-        sp.Symbol("V_1"), 0
-    )
-
-    alpha_coeff_alpha_expr = alpha_derivative_deterministic.subs(
-        {sp.conjugate(alpha): 0, alpha: 1}
-    )
-    alpha_coeff_alpha_bar_expr = alpha_derivative_deterministic.subs(
-        {sp.conjugate(alpha): 1, alpha: 0}
-    )
-    expr = expr.subs(
-        {
-            alpha_coeff_alpha: alpha_coeff_alpha_expr,
-            alpha_coeff_alpha_bar: alpha_coeff_alpha_bar_expr,
-        }
-    )
-    return sp.simplify(expr)
-
-
-def get_classical_stochastic_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
-
-    return sp.simplify(
-        expect_var.subs(
-            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def get_classical_stochastic_derivative_complex_conj_pair(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-# LOW_FRICTION_ZETA = sp.limit(get_equilibrium_zeta(positive=True), eta_lambda, sp.oo)
-low_friction = get_equilibrium_zeta(positive=True).lseries(eta_lambda, sp.oo)  # type: ignore sp
-LOW_FRICTION_ZETA = sum(sp.simplify(e) for e in itertools.islice(low_friction, 3))
-
-
-def get_low_friction_equilibrium_value(expr: sp.Expr) -> sp.Expr:
+def get_low_temperature_equilibrium_value(expr: sp.Expr) -> sp.Expr:
     """Get the equilibrium value of an expression at low friction."""
     # Take the power to leading order in 1 / eta_lambda, since at infinity
     # the stochastic term is zero!
-    low_friction = expr.subs({zeta: LOW_FRICTION_ZETA}).lseries(  # type: ignore unknown
-        eta_lambda, sp.oo
+
+    return sp.simplify(
+        next(
+            expr.subs({zeta: LOW_FRICTION_ZETA}).lseries(  # type: ignore unknown
+                (1 - 4 * eta_omega) ** 2 / eta_lambda
+            ),
+            sp.Number(0),
+        )
     )
-    return sum(sp.simplify(e) for e in itertools.islice(low_friction, 4))  # type: ignore sp
-    # return sp.simplify(
-    #     next(
-    #         expr.subs({zeta: LOW_FRICTION_ZETA}).lseries(  # type: ignore unknown
-    #             (1 - 4 * eta_omega) ** 2 / eta_lambda
-    #         ),
-    #         sp.Number(0),
-    #     )
-    # )
 
 
 def get_low_friction_equilibrium_derivative(
     ty: Literal["zeta", "alpha", "phi"],
 ) -> sp.Expr:
     deterministic = get_deterministic_derivative(ty)
-    deterministic = get_low_friction_equilibrium_value(deterministic)
-
-    stochastic = 0  # get_stochastic_derivative(ty)
-    stochastic = 0  # get_low_friction_equilibrium_value(stochastic)
-    return deterministic + stochastic
-
-
-def get_high_friction_equilibrium_value(expr: sp.Expr) -> sp.Expr:
-    """Get the equilibrium value of an expression at low friction."""
-    # Return series in eta_lambda, since at high friction
-    zeta_eq = get_equilibrium_zeta(positive=True)
-    zeta_eq = sp.series(zeta_eq, eta_lambda, 0, n=1).removeO()
-    expr = expr.subs({zeta: sp.simplify(zeta_eq)})
-    # series = sp.series(expr, eta_lambda, 0, n=3).removeO()
-    return sp.simplify(expr)
-    # return sp.simplify(series).removeO()
-
-
-def get_high_friction_equilibrium_derivative(
-    ty: Literal["zeta", "alpha", "phi"],
-) -> sp.Expr:
-    deterministic = get_deterministic_derivative(ty)
-    deterministic = get_high_friction_equilibrium_value(deterministic)
+    deterministic = get_low_temperature_equilibrium_value(deterministic)
 
     stochastic = get_stochastic_derivative(ty)
-    stochastic = get_high_friction_equilibrium_value(stochastic)
+    stochastic = get_low_temperature_equilibrium_value(stochastic)
     return deterministic + stochastic
 
 
@@ -251,110 +68,39 @@ def get_classical_low_friction_equilibrium_derivative(
     ty: Literal["x", "p"],
 ) -> sp.Expr:
     deterministic = get_classical_deterministic_derivative(ty)
-    deterministic = get_low_friction_equilibrium_value(deterministic)
+    deterministic = get_low_temperature_equilibrium_value(deterministic)
     deterministic = group_x_p_terms(deterministic)
-
-    stochastic = 0  # get_classical_stochastic_derivative(ty)
-    stochastic = 0  # get_low_friction_equilibrium_value(stochastic)
-    return deterministic + stochastic
-
-
-def get_classical_high_friction_equilibrium_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    deterministic = get_classical_deterministic_derivative_complex_conj_pair(ty)
-    deterministic = squeeze_ratio_from_zeta_expr(deterministic)
-    deterministic = group_x_p_terms(deterministic)
-    deterministic = get_high_friction_equilibrium_value(deterministic)
 
     stochastic = get_classical_stochastic_derivative(ty)
-    stochastic = get_high_friction_equilibrium_value(stochastic)
+    stochastic = get_low_temperature_equilibrium_value(stochastic)
     return deterministic + stochastic
-
-
-@cache
-def get_classical_equilibrium_derivative_ratio(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    deterministic = get_classical_deterministic_derivative_complex_conj_pair(ty)
-    deterministic = squeeze_ratio_from_zeta_expr(deterministic)
-    deterministic = group_x_p_terms(deterministic)
-
-    stochastic = get_classical_stochastic_derivative_complex_conj_pair(ty)
-    stochastic = squeeze_ratio_from_zeta_expr(stochastic)
-    return deterministic + stochastic
-
-
-@cache
-def get_classical_equilibrium_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    deterministic = get_classical_deterministic_derivative_complex_conj_pair(ty)
-    deterministic = group_x_p_terms(deterministic)
-
-    stochastic = get_classical_stochastic_derivative_complex_conj_pair(ty)
-    return deterministic + stochastic
-
-
-def expand_ratio_around_classical_limit(
-    expr: sp.Expr,
-) -> sp.Expr:
-    """Expand the ratio around the classical limit."""
-    # substitute R with R_classical + delta_R
-    R_classical = sp.Symbol("R_cl", real=True)
-    delta_R = sp.Symbol("delta_R", complex=True)
-    expr = expr.subs({squeeze_ratio: R_classical + delta_R})  # type: ignore unknown
-    series = expr.lseries(delta_R, 2)  # type: ignore sp
-    return sum(sp.simplify(e) for e in itertools.islice(series, 2))  # type: ignore sp
-
-
-def sub_equilibrium_ratio(
-    expr: sp.Expr, ty: Literal["high_fric", "low_fric"]
-) -> sp.Expr:
-    """Substitute the equilibrium ratio into an expression."""
-    equilibrium_ratio = get_equilibrium_squeeze_ratio()
-    if ty == "high_fric":
-        equilibrium_ratio = sp.simplify(
-            sp.series(equilibrium_ratio, eta_lambda, 0, n=2).removeO()
-        )
-    elif ty == "low_fric":
-        low_friction = equilibrium_ratio.lseries(eta_lambda, sp.oo)  # type: ignore sp
-        equilibrium_ratio = sum(
-            sp.simplify(e) for e in itertools.islice(low_friction, 1)
-        )  # type: ignore sp
-    expr = sp.expand(expr.subs({squeeze_ratio: equilibrium_ratio}))
-    return group_x_p_terms(expr)  # type: ignore unknown
-
-
-def replace_sqrt_part(expr: sp.Expr) -> sp.Expr:
-    """Replace the square root part in an expression."""
-    expr = sp.expand(expr)
-    sqrt_part = (
-        -4 * eta_lambda**2
-        + 16 * sp.I * eta_lambda * eta_omega**2
-        + sp.I * eta_lambda
-        + 8 * eta_omega**2
-    )
-    expr = expr.subs({sp.conjugate(sp.sqrt(sqrt_part)) ** 2: sqrt_part})  # type: ignore unknown
-    return sp.simplify(expr)
 
 
 if __name__ == "__main__":
-    # low_friction_alpha_derivative = get_high_friction_equilibrium_derivative("alpha")
-    # low_friction_alpha_derivative = low_friction_alpha_derivative.subs(
-    #     sp.Symbol("V_1"), 0
-    # )
-    # print("alpha derivatives in Classical Limit:")
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{d\alpha}{dt}"),
-    #         low_friction_alpha_derivative,
-    #     )
-    # )
-    # print()
+    low_friction_alpha_derivative = get_low_friction_equilibrium_derivative("alpha")
+    low_friction_alpha_derivative = low_friction_alpha_derivative.subs(
+        sp.Symbol("V_1"), 0
+    )
+    print("alpha derivatives in Classical Limit:")
+    sp.print_latex(
+        sp.Eq(  # type: ignore unknown
+            sp.Symbol(r"\frac{d\alpha}{dt}"),
+            low_friction_alpha_derivative,
+        )
+    )
+    print()
+
+    x_derivative = get_classical_stochastic_derivative("x")
+    x_derivative = x_derivative.subs(sp.Symbol("V_1"), 0)
+    sp.print_latex(
+        sp.Eq(  # type: ignore unknown
+            sp.Symbol(r"\frac{dx}{dt}"),
+            x_derivative,
+        )
+    )
+    print()
     # Now we calculate the x and p derivatives at low friction
-    # low_friction_x_derivative = get_classical_low_friction_equilibrium_derivative("x")
-    low_friction_x_derivative = get_classical_equilibrium_derivative_ratio("x")
+    low_friction_x_derivative = get_classical_low_friction_equilibrium_derivative("x")
     low_friction_x_derivative = low_friction_x_derivative.subs(sp.Symbol("V_1"), 0)
     sp.print_latex(
         sp.Eq(  # type: ignore unknown
@@ -363,60 +109,21 @@ if __name__ == "__main__":
         )
     )
     print()
-    x_dependence_x = low_friction_x_derivative.subs(
-        {p: 0, x: 1, noise: 0, sp.conjugate(noise): 0}
-    )
-    equilibrium_ratio = get_equilibrium_squeeze_ratio()
-    low_friction = equilibrium_ratio.lseries(eta_lambda, sp.oo)  # type: ignore sp
-    low_friction_series = sum(sp.simplify(e) for e in itertools.islice(low_friction, 2))  # type: ignore sp
-    print("substituting equilibrium ratio")
-    x_dependence_x = sp.simplify(x_dependence_x).subs(
-        {squeeze_ratio: equilibrium_ratio}
-    )
-    print("replacing:")
-    x_dependence_x_numerator, denom_x_dependence_x = sp.fraction(
-        x_dependence_x, exact=True
-    )
-    x_dependence_x_numerator = replace_sqrt_part(x_dependence_x_numerator)
-    denom_x_dependence_x = replace_sqrt_part(denom_x_dependence_x)
-    sp.print_latex(x_dependence_x_numerator)
-    input()
-    x_dependence_x_low_friction = (
-        x_dependence_x_numerator / denom_x_dependence_x
-    ).lseries(eta_lambda, sp.oo)  # type: ignore sp
-    x_dependence_x_low_friction_series = sum(
-        sp.simplify(e) for e in itertools.islice(x_dependence_x_low_friction, 2)
-    )  # type: ignore sp
-    print("x dependence on x:")
-    sp.print_latex(x_dependence_x_low_friction_series)
-    # sp.print_latex(sp.simplify(x_dependence_x / denom_x_dependence_x))
 
-    # low_friction_p_derivative = get_classical_low_friction_equilibrium_derivative("p")
-    # low_friction_p_derivative = low_friction_p_derivative.subs(sp.Symbol("V_1"), 0)
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dp}{dt}"),
-    #         low_friction_p_derivative,
-    #     )
-    # )
-    # print()
-    # # expand the derivatives around the classical limit
-    # low_friction_x_derivative = sub_equilibrium_ratio(
-    #     low_friction_x_derivative, ty="high_fric"
-    # )
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dx}{dt}"),
-    #         low_friction_x_derivative,
-    #     )
-    # )
-    # print()
-    # low_friction_p_derivative = sub_equilibrium_ratio(
-    #     low_friction_p_derivative, ty="high_fric"
-    # )
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dp}{dt}"),
-    #         low_friction_p_derivative,
-    #     )
-    # )
+    p_derivative = get_classical_stochastic_derivative("p")
+    p_derivative = p_derivative.subs(sp.Symbol("V_1"), 0)
+    sp.print_latex(
+        sp.Eq(  # type: ignore unknown
+            sp.Symbol(r"\frac{dp}{dt}"),
+            p_derivative,
+        )
+    )
+    print()
+    low_friction_p_derivative = get_classical_low_friction_equilibrium_derivative("p")
+    low_friction_p_derivative = low_friction_p_derivative.subs(sp.Symbol("V_1"), 0)
+    sp.print_latex(
+        sp.Eq(  # type: ignore unknown
+            sp.Symbol(r"\frac{dp}{dt}"),
+            low_friction_p_derivative,
+        )
+    )
