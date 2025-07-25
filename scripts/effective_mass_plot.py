@@ -68,6 +68,14 @@ def plot_zeta() -> None:
     ax.set_title("Zeta")
     fig.show()
 
+    fig, ax = plot_lambda_omega_formula(zeta, measure="real")
+    ax.set_title("Zeta (Real Part)")
+    fig.show()
+
+    fig, ax = plot_lambda_omega_formula(zeta, measure="imag")
+    ax.set_title("Zeta (Imaginary Part)")
+    fig.show()
+
 
 def plot_effective_mass() -> None:
     x_derivative_p = get_classical_deterministic_derivative("x").subs(
