@@ -18,7 +18,7 @@ def test_nomalize_eta() -> None:
         units=Units(),
     )
     normalized_eta = eta.to_normalized()
-    assert normalized_eta.eta_m == 1
+    assert np.isclose(normalized_eta.eta_m, 1)
     assert normalized_eta.m == eta.m
 
     assert normalized_eta.kbt_div_hbar == 1
