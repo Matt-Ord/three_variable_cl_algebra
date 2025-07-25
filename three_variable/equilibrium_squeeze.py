@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import cache
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -17,6 +18,7 @@ from three_variable.projected_sse import (
     get_system_derivative,
 )
 from three_variable.symbols import eta_lambda, eta_m, eta_omega, zeta
+from three_variable.util import file_cached
 
 squeeze_ratio = sp.Symbol(r"R")
 ratio_expr = (1 - zeta) / (1 + zeta)
@@ -45,7 +47,13 @@ def get_squeeze_derivative() -> sp.Expr:
     return sp.factor_terms(expr_r_system + expr_r_environment, fraction=True)
 
 
-@cache
+def _get_get_equilibrium_squeeze_ratio_path(*, positive: bool = True) -> Path:
+    """Get the path to the cached equilibrium squeeze ratio."""
+    return Path(f".cache/equilibrium_squeeze_ratio.{positive}")
+
+
+@file_cached(_get_get_equilibrium_squeeze_ratio_path)
+@timed
 def get_equilibrium_squeeze_ratio(*, positive: bool = True) -> sp.Expr:
     factored = get_squeeze_derivative()
     numer, _denom = sp.together(factored).as_numer_denom()

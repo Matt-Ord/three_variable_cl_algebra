@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cache
+from pathlib import Path
 from typing import Literal
 
 import sympy as sp
@@ -13,8 +14,11 @@ from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
     action_from_expr,
+    expect_p,
+    expect_x,
     expectation_from_expr,
     extract_action,
+    xp_expression_from_alpha,
 )
 from three_variable.symbols import (
     KBT,
@@ -31,6 +35,7 @@ from three_variable.symbols import (
     p_expr,
     x_expr,
 )
+from three_variable.util import file_cached
 
 
 def _get_lindblad_operator_raw() -> sp.Expr:
@@ -98,7 +103,11 @@ def get_harmonic_term() -> sp.Expr:
     return 0.5 * m * omega**2 * x_expr**2
 
 
-@cache
+def _get_system_derivative_path(ty: Literal["zeta", "alpha", "phi"]) -> Path:
+    return Path(f".cache/system_derivative.{ty}")
+
+
+@file_cached(_get_system_derivative_path)
 @timed
 def get_system_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     linear_term = get_linear_term()
@@ -112,7 +121,11 @@ def get_system_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     )
 
 
-@cache
+def _get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> Path:
+    return Path(f".cache/environment_derivative.{ty}")
+
+
+@file_cached(_get_environment_derivative)
 @timed
 def get_environment_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     drift_term = get_drift_term()
@@ -150,3 +163,55 @@ def get_full_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     deterministic_derivative = get_deterministic_derivative(ty)
     stochastic_derivative = get_stochastic_derivative(ty)
     return deterministic_derivative + stochastic_derivative
+
+
+def _get_classical_deterministic_derivative(ty: Literal["x", "p"]) -> Path:
+    return Path(f".cache/classical_deterministic_derivative.{ty}")
+
+
+@file_cached(_get_classical_deterministic_derivative)
+@timed
+def get_classical_deterministic_derivative(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
+
+    return sp.simplify(
+        expect_var.subs(
+            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
+        ),
+        rational=True,
+    )
+
+
+def _get_classical_stochastic_derivative(ty: Literal["x", "p"]) -> Path:
+    return Path(f".cache/classical_stochastic_derivative.{ty}")
+
+
+@file_cached(_get_classical_stochastic_derivative)
+@timed
+def get_classical_stochastic_derivative(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
+
+    return sp.simplify(
+        expect_var.subs(
+            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
+        ),
+        rational=True,
+    )
