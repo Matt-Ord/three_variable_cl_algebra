@@ -30,6 +30,17 @@ class Units:
         return value * (self.length_factor / units.length_factor)
 
     @overload
+    def area_into(self, value: float, units: Units) -> float: ...
+    @overload
+    def area_into[DT: np.dtype[np.number]](
+        self, value: np.ndarray[Any, DT], units: Units
+    ) -> np.ndarray[Any, DT]: ...
+    def area_into(
+        self, value: float | np.ndarray[Any, np.dtype[np.number]], units: Units
+    ) -> float | np.ndarray[Any, np.dtype[np.number]]:
+        return value * (self.length_factor / units.length_factor) ** 2
+
+    @overload
     def time_into(self, value: float, units: Units) -> float: ...
     @overload
     def time_into[DT: np.dtype[np.number]](
@@ -70,7 +81,7 @@ class EtaParameters:
 
     @property
     def m(self) -> float:
-        eta_m = self.units.length_into(self.eta_m, Units())
+        eta_m = self.units.area_into(self.eta_m, Units())
         kb_t_div_hbar = self.units.frequency_into(self.kbt_div_hbar, Units())
         return eta_m * (hbar / 2) / kb_t_div_hbar
 
@@ -103,11 +114,14 @@ class EtaParameters:
 
     def to_normalized(self) -> EtaParameters:
         """Return a normalized version of the parameters."""
-        new_units = Units(length_factor=self.eta_m, time_factor=1 / self.kbt_div_hbar)
+        new_units = Units(
+            length_factor=np.sqrt(self.eta_m),
+            time_factor=1 / self.kbt_div_hbar,
+        )
         assert self.units.frequency_into(self.kbt_div_hbar, new_units) == 1
-        assert self.units.length_into(self.eta_m, new_units) == 1
+        assert np.isclose(self.units.area_into(self.eta_m, new_units), 1)
         out = EtaParameters(
-            eta_m=self.units.length_into(self.eta_m, new_units),
+            eta_m=self.units.area_into(self.eta_m, new_units),
             eta_lambda=self.eta_lambda,
             eta_omega=self.eta_omega,
             kbt_div_hbar=self.units.frequency_into(self.kbt_div_hbar, new_units),

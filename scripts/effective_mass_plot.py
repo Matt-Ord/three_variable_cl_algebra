@@ -52,10 +52,11 @@ def plot_lambda_omega_formula(
 
 
 def plot_effective_frequency() -> None:
+    eta_m_val = 1
     p_derivative_x = get_classical_deterministic_derivative("p").subs(
-        {x: 1, p: 0, noise: 0, KBT: 1, hbar: 1, eta_m: 1, sp.Symbol("V_1"): 0}
+        {x: 1, p: 0, noise: 0, KBT: 1, hbar: 1, eta_m: eta_m_val, sp.Symbol("V_1"): 0}
     )
-    mass_fraction = sp.simplify(p_derivative_x * eta_omega**2)
+    mass_fraction = sp.simplify(p_derivative_x * eta_omega**2 / eta_m_val)
 
     fig, ax = plot_lambda_omega_formula(mass_fraction, measure="abs")
     ax.set_title("Effective Frequency (Absolute Value)")
@@ -91,10 +92,20 @@ def plot_effective_friction() -> None:
 
 
 def plot_x_force() -> None:
+    kb_t_val = 1
+    hbar_val = 1
     x_derivative_x = get_classical_deterministic_derivative("x").subs(
-        {x: 1, p: 0, noise: 0, KBT: 1, hbar: 1, eta_m: 1, sp.Symbol("V_1"): 0}
+        {
+            x: 1,
+            p: 0,
+            noise: 0,
+            KBT: kb_t_val,
+            hbar: hbar_val,
+            eta_m: 1,
+            sp.Symbol("V_1"): 0,
+        }
     )
-    lambda_fraction = sp.simplify(x_derivative_x)
+    lambda_fraction = sp.simplify(x_derivative_x * hbar_val / kb_t_val)
 
     fig, ax = plot_lambda_omega_formula(lambda_fraction, measure="abs")
     ax.set_title("X Force (Absolute Value)")
