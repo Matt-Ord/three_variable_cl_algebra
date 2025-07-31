@@ -26,7 +26,7 @@ from three_variable.simulation import (
 from three_variable.symbols import (
     alpha,
     eta_lambda,
-    eta_omega,
+    eta_m,
     noise,
     p,
     x,
@@ -35,6 +35,7 @@ from three_variable.symbols import (
 
 alpha_coeff_alpha = sp.Symbol("alpha_coeff_alpha", complex=True)
 alpha_coeff_alpha_bar = sp.Symbol("alpha_coeff_alpha_bar", complex=True)
+r0 = sp.Symbol("R_0", complex=True)  # R = eta_m * r0
 
 
 def get_explicit_equilibrium_derivative(
@@ -81,69 +82,6 @@ def get_classical_deterministic_derivative_complex_conj_pair(
         ),
         rational=True,
     )
-
-
-def get_classical_deterministic_derivative_complex_conj_pair_ratio(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(
-        squeeze_ratio_from_zeta_expr(get_deterministic_derivative("alpha"))
-    )
-    derivative_xp = squeeze_ratio_from_zeta_expr(derivative_xp)
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def get_classical_deterministic_derivative_complex_conj_pair_symbol_coefficient(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(
-        alpha_coeff_alpha * alpha + alpha_coeff_alpha_bar * sp.conjugate(alpha)
-    )
-
-    expect_var = expect_x if ty == "x" else expect_p
-
-    return sp.simplify(
-        expect_var.subs(
-            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def expr_from_coeff(expr: sp.Expr) -> sp.Expr:
-    # substitute the coefficients of alpha and alpha_bar in derivatives from the deterministic equations
-    alpha_derivative_deterministic = get_deterministic_derivative("alpha").subs(
-        sp.Symbol("V_1"), 0
-    )
-
-    alpha_coeff_alpha_expr = alpha_derivative_deterministic.subs(
-        {sp.conjugate(alpha): 0, alpha: 1}
-    )
-    alpha_coeff_alpha_bar_expr = alpha_derivative_deterministic.subs(
-        {sp.conjugate(alpha): 1, alpha: 0}
-    )
-    expr = expr.subs(
-        {
-            alpha_coeff_alpha: alpha_coeff_alpha_expr,
-            alpha_coeff_alpha_bar: alpha_coeff_alpha_bar_expr,
-        }
-    )
-    return sp.simplify(expr)
 
 
 def get_classical_stochastic_derivative(
@@ -241,6 +179,26 @@ def get_high_friction_equilibrium_derivative(
     return deterministic + stochastic
 
 
+def get_high_mass_equilibrium_value(expr: sp.Expr, expanding: bool = True) -> sp.Expr:
+    """Get the equilibrium value of an expression at high mass, in power series of 1/eta_m."""
+    # Expand to leading order in eta_m
+    expr = expr.subs({squeeze_ratio: eta_m * r0})
+    if not expanding:
+        return sp.simplify(expr)
+    high_mass_series = expr.lseries(  # type: ignore unknown
+        eta_m, sp.oo
+    )
+    return sum(sp.simplify(e) for e in itertools.islice(high_mass_series, 2))  # type: ignore sp
+
+
+def substitute_back_r0(expr: sp.Expr) -> sp.Expr:
+    """Substitute back r0 in an expression."""
+    # Substitute r0 with the squeeze ratio
+    equilibrium_r0 = get_equilibrium_squeeze_ratio() / eta_m
+    expr = expr.subs({r0: equilibrium_r0})
+    return sp.simplify(expr)
+
+
 def group_x_p_terms(expr: sp.Expr) -> sp.Expr:
     """Group the x and p terms in an expression."""
     terms = Add.make_args(sp.collect(sp.expand(expr), [x, p]))
@@ -275,11 +233,20 @@ def get_classical_high_friction_equilibrium_derivative(
 @cache
 def get_classical_equilibrium_derivative_ratio(
     ty: Literal["x", "p"],
+    part: Literal["deterministic", "stochastic", "total"] = "total",
 ) -> sp.Expr:
+    if part == "deterministic":
+        deterministic = get_classical_deterministic_derivative_complex_conj_pair(ty)
+        deterministic = squeeze_ratio_from_zeta_expr(deterministic)
+        return group_x_p_terms(deterministic)
+
+    if part == "stochastic":
+        stochastic = get_classical_stochastic_derivative_complex_conj_pair(ty)
+        return squeeze_ratio_from_zeta_expr(stochastic)
+
     deterministic = get_classical_deterministic_derivative_complex_conj_pair(ty)
     deterministic = squeeze_ratio_from_zeta_expr(deterministic)
     deterministic = group_x_p_terms(deterministic)
-
     stochastic = get_classical_stochastic_derivative_complex_conj_pair(ty)
     stochastic = squeeze_ratio_from_zeta_expr(stochastic)
     return deterministic + stochastic
@@ -296,64 +263,7 @@ def get_classical_equilibrium_derivative(
     return deterministic + stochastic
 
 
-def expand_ratio_around_classical_limit(
-    expr: sp.Expr,
-) -> sp.Expr:
-    """Expand the ratio around the classical limit."""
-    # substitute R with R_classical + delta_R
-    R_classical = sp.Symbol("R_cl", real=True)
-    delta_R = sp.Symbol("delta_R", complex=True)
-    expr = expr.subs({squeeze_ratio: R_classical + delta_R})  # type: ignore unknown
-    series = expr.lseries(delta_R, 2)  # type: ignore sp
-    return sum(sp.simplify(e) for e in itertools.islice(series, 2))  # type: ignore sp
-
-
-def sub_equilibrium_ratio(
-    expr: sp.Expr, ty: Literal["high_fric", "low_fric"]
-) -> sp.Expr:
-    """Substitute the equilibrium ratio into an expression."""
-    equilibrium_ratio = get_equilibrium_squeeze_ratio()
-    if ty == "high_fric":
-        equilibrium_ratio = sp.simplify(
-            sp.series(equilibrium_ratio, eta_lambda, 0, n=2).removeO()
-        )
-    elif ty == "low_fric":
-        low_friction = equilibrium_ratio.lseries(eta_lambda, sp.oo)  # type: ignore sp
-        equilibrium_ratio = sum(
-            sp.simplify(e) for e in itertools.islice(low_friction, 1)
-        )  # type: ignore sp
-    expr = sp.expand(expr.subs({squeeze_ratio: equilibrium_ratio}))
-    return group_x_p_terms(expr)  # type: ignore unknown
-
-
-def replace_sqrt_part(expr: sp.Expr) -> sp.Expr:
-    """Replace the square root part in an expression."""
-    expr = sp.expand(expr)
-    sqrt_part = (
-        -4 * eta_lambda**2
-        + 16 * sp.I * eta_lambda * eta_omega**2
-        + sp.I * eta_lambda
-        + 8 * eta_omega**2
-    )
-    expr = expr.subs({sp.conjugate(sp.sqrt(sqrt_part)) ** 2: sqrt_part})  # type: ignore unknown
-    return sp.simplify(expr)
-
-
 if __name__ == "__main__":
-    # low_friction_alpha_derivative = get_high_friction_equilibrium_derivative("alpha")
-    # low_friction_alpha_derivative = low_friction_alpha_derivative.subs(
-    #     sp.Symbol("V_1"), 0
-    # )
-    # print("alpha derivatives in Classical Limit:")
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{d\alpha}{dt}"),
-    #         low_friction_alpha_derivative,
-    #     )
-    # )
-    # print()
-    # Now we calculate the x and p derivatives at low friction
-    # low_friction_x_derivative = get_classical_low_friction_equilibrium_derivative("x")
     low_friction_x_derivative = get_classical_equilibrium_derivative_ratio("x")
     low_friction_x_derivative = low_friction_x_derivative.subs(sp.Symbol("V_1"), 0)
     sp.print_latex(
@@ -371,52 +281,11 @@ if __name__ == "__main__":
     low_friction_series = sum(sp.simplify(e) for e in itertools.islice(low_friction, 2))  # type: ignore sp
     print("substituting equilibrium ratio")
     x_dependence_x = sp.simplify(x_dependence_x).subs(
-        {squeeze_ratio: equilibrium_ratio}
+        {squeeze_ratio: low_friction_series}
     )
-    print("replacing:")
-    x_dependence_x_numerator, denom_x_dependence_x = sp.fraction(
-        x_dependence_x, exact=True
-    )
-    x_dependence_x_numerator = replace_sqrt_part(x_dependence_x_numerator)
-    denom_x_dependence_x = replace_sqrt_part(denom_x_dependence_x)
-    sp.print_latex(x_dependence_x_numerator)
-    input()
-    x_dependence_x_low_friction = (
-        x_dependence_x_numerator / denom_x_dependence_x
-    ).lseries(eta_lambda, sp.oo)  # type: ignore sp
+    x_dependence_x_low_friction = (x_dependence_x).lseries(eta_lambda, sp.oo)  # type: ignore sp
     x_dependence_x_low_friction_series = sum(
         sp.simplify(e) for e in itertools.islice(x_dependence_x_low_friction, 2)
     )  # type: ignore sp
     print("x dependence on x:")
     sp.print_latex(x_dependence_x_low_friction_series)
-    # sp.print_latex(sp.simplify(x_dependence_x / denom_x_dependence_x))
-
-    # low_friction_p_derivative = get_classical_low_friction_equilibrium_derivative("p")
-    # low_friction_p_derivative = low_friction_p_derivative.subs(sp.Symbol("V_1"), 0)
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dp}{dt}"),
-    #         low_friction_p_derivative,
-    #     )
-    # )
-    # print()
-    # # expand the derivatives around the classical limit
-    # low_friction_x_derivative = sub_equilibrium_ratio(
-    #     low_friction_x_derivative, ty="high_fric"
-    # )
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dx}{dt}"),
-    #         low_friction_x_derivative,
-    #     )
-    # )
-    # print()
-    # low_friction_p_derivative = sub_equilibrium_ratio(
-    #     low_friction_p_derivative, ty="high_fric"
-    # )
-    # sp.print_latex(
-    #     sp.Eq(  # type: ignore unknown
-    #         sp.Symbol(r"\frac{dp}{dt}"),
-    #         low_friction_p_derivative,
-    #     )
-    # )
