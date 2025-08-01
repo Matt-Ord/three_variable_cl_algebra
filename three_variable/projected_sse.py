@@ -215,3 +215,57 @@ def get_classical_stochastic_derivative(
         ),
         rational=True,
     )
+
+
+def _get_classical_deterministic_derivative_complex_conj_pair(
+    ty: Literal["x", "p"],
+) -> Path:
+    return Path(f".cache/classical_deterministic_derivative_complex_conj_pair.{ty}")
+
+
+@file_cached(_get_classical_deterministic_derivative_complex_conj_pair)
+@timed
+def get_classical_deterministic_derivative_complex_conj_pair(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+
+    return sp.simplify(
+        expect_var.subs(
+            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
+        ),
+        rational=True,
+    )
+
+
+def _get_classical_stochastic_derivative_complex_conj_pair(
+    ty: Literal["x", "p"],
+) -> Path:
+    return Path(f".cache/classical_stochastic_derivative_complex_conj_pair.{ty}")
+
+
+@file_cached(_get_classical_stochastic_derivative_complex_conj_pair)
+@timed
+def get_classical_stochastic_derivative_complex_conj_pair(
+    ty: Literal["x", "p"],
+) -> sp.Expr:
+    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
+    # Then replace re(alpha) and im(alpha) with their derivatives.
+    # This gives us d/dt <x> etc.
+    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
+    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
+
+    expect_var = expect_x if ty == "x" else expect_p
+
+    return sp.simplify(
+        expect_var.subs(
+            {alpha: derivative_xp, sp.conjugate(alpha): sp.conjugate(derivative_xp)}
+        ),
+        rational=True,
+    )
