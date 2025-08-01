@@ -32,7 +32,7 @@ PHYSICAL_PARAMS = [
 
 
 def plot_lambda_omega_formula_high_mass(
-    formula: sp.Expr, *, measure: plot.Measure = "real"
+    formula: sp.Expr, *, measure: plot.Measure = "real", plot_atoms: bool = False
 ) -> tuple[Figure, Axes, QuadMesh]:
     eta_omega_value = np.logspace(-10, 10, 500)
     eta_lambda_value = np.logspace(-10, 10, 500)
@@ -51,16 +51,17 @@ def plot_lambda_omega_formula_high_mass(
         plot.get_measured_data(formula_fn(l_v, o_v), measure),  # type: ignore args
         cmap="viridis",
     )
-    # for name, parameters, c in PHYSICAL_PARAMS:
-    #     scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore unknown
-    #     scatter.set_label(name)
-    #     scatter.set_color(c)
+    if plot_atoms:
+        for name, parameters, c in PHYSICAL_PARAMS:
+            scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore unknown
+            scatter.set_label(name)
+            scatter.set_color(c)
+            ax.legend(loc="upper right")
     fig.colorbar(mesh, ax=ax)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"$\eta_\lambda$")
     ax.set_ylabel(r"$\eta_\omega$")
-    # ax.legend(loc="upper right")
     return fig, ax, mesh
 
 
@@ -235,7 +236,6 @@ def plot_x_force_high_mass() -> None:
             eta_m: eta_m_val,
         }
     )
-    # lambda_fraction = sp.simplify(x_derivative_x_high_mass)
     lambda_fraction = x_derivative_x_high_mass
     fig, ax, mesh = plot_lambda_omega_formula_high_mass(lambda_fraction, measure="real")
     mesh.set_norm(SymLogNorm(linthresh=10, linscale=5))
@@ -273,7 +273,6 @@ def plot_x_stochastic() -> None:
         }
     )
     print("lamdifying")
-    # lambda_fraction = sp.simplify(x_derivative_x_high_mass)
     lambda_fraction = x_stochastic_high_mass
     fig, ax, mesh = plot_lambda_omega_formula_high_mass(lambda_fraction, measure="abs")
     mesh.set_norm(SymLogNorm(linthresh=10, linscale=5))
@@ -307,7 +306,6 @@ def plot_p_stochastic() -> None:
             eta_m: eta_m_val,
         }
     )
-    # lambda_fraction = sp.simplify(x_derivative_x_high_mass)
     lambda_fraction = p_stochastic_high_mass
     fig, ax, mesh = plot_lambda_omega_formula_high_mass(lambda_fraction, measure="abs")
     mesh.set_norm(SymLogNorm(linthresh=10, linscale=5))
@@ -318,6 +316,7 @@ def plot_p_stochastic() -> None:
 
 
 def plot_p_fluctuation() -> None:
+    """Plot the ratio of p mean squared fluctuation with expected value from classical FDT, no limits are taken for calculation of fluctuation, so it is valid for all parameters."""
     kb_t_val = Boltzmann * 300
     hbar_val = 1.0545718e-34
     eta_m_val = ELENA_NA_CU.eta_parameters.eta_m
@@ -341,8 +340,6 @@ def plot_p_fluctuation() -> None:
             eta_m: eta_m_val,
         }
     )
-    # lambda_fraction = sp.simplify(x_derivative_x_high_mass)
-    # p_rms = sp.sqrt(eta_m_val * hbar_val**2 / 2)
     lambda_fraction = (
         p_stochastic_high_mass
         * sp.conjugate(p_stochastic_high_mass)
@@ -358,6 +355,7 @@ def plot_p_fluctuation() -> None:
 
 
 def plot_x_fluctuation() -> None:
+    """Plot the ratio of x root mean squared fluctuation with p/m, where p is estimated from equipartition theorem."""
     kb_t_val = Boltzmann * 300
     hbar_val = 1.0545718e-34
     eta_m_val = ELENA_NA_CU.eta_parameters.eta_m
@@ -381,8 +379,6 @@ def plot_x_fluctuation() -> None:
             eta_m: eta_m_val,
         }
     )
-    # lambda_fraction = sp.simplify(x_derivative_x_high_mass)
-    # x_rms = sp.sqrt(2 * eta_omega**2 / eta_m_val)
     p_over_m = sp.sqrt(2 / eta_m_val) * (kb_t_val / hbar_val)
     lambda_fraction = x_stochastic_high_mass
     fig, ax, mesh = plot_lambda_omega_formula_high_mass(
