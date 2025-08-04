@@ -9,6 +9,8 @@ from three_variable.simulation import (
     EtaParameters,
     SimulationConfig,
     SimulationResult,
+    estimate_r0,
+    hbar_value,
     run_projected_simulation,
 )
 
@@ -32,8 +34,8 @@ def plot_alpha_zeta_evolution(
     ax0.set_ylabel("Alpha")
     ax1.legend(handles=[line0, line1], labels=["$\\Re(\\alpha)$", "$\\Im(\\alpha)$"])
 
-    (line0,) = ax1.plot(result.times, result.zeta.real)
-    (line1,) = ax1.twinx().plot(result.times, result.zeta.imag)
+    (line0,) = ax1.plot(result.times, result.squeeze_ratio.real)
+    (line1,) = ax1.twinx().plot(result.times, result.squeeze_ratio.imag)
     line1.set_color("C1")
     ax1.set_title("Zeta Evolution")
     ax1.set_xlabel("Time")
@@ -72,8 +74,15 @@ def plot_classical_evolution(
 
 
 if __name__ == "__main__":
-    eta_m_val = 1
-
+    eta_m_val = 1e22
+    eta_lamda_val = 60
+    eta_omega_val = 1
+    time_scale = hbar_value / KBT_value
+    print("Estimating initial r0")
+    r0_estimate = estimate_r0(
+        eta_lambda_val=eta_lamda_val,
+        eta_omega_val=eta_omega_val,
+    )
     print("Running simulation")
     solution = run_projected_simulation(
         SimulationConfig(
@@ -83,19 +92,19 @@ if __name__ == "__main__":
                 eta_omega=1,
                 kbt_div_hbar=1.0,
             ),
-            alpha_0=1.0 + 0.0j,
-            zeta_0=-2 / 3 + 0.0j,
-            times=np.linspace(0, 5, int(eta_m_val * 1000)),
+            alpha_0=0.000001 + 0.0j,
+            r_0=r0_estimate,
+            times=np.linspace(0, 1000, 50000) * time_scale,
         )
     )
 
     print("Simulation completed")
-    print("Final (equilibrium) zeta:", solution.zeta[-1])
+    print("Final (equilibrium) r:", solution.squeeze_ratio[-1])
 
     fig, _ = plot_alpha_zeta_evolution(solution)
     fig.savefig("alpha_zeta_evolution.png", dpi=300)
 
-    fig, _ = plot_classical_evolution(solution[-300::])
+    fig, _ = plot_classical_evolution(solution[-1000::])
     fig.savefig("classical_evolution.png", dpi=300)
 
     plt.show()
