@@ -36,8 +36,7 @@ if TYPE_CHECKING:
 
 from three_variable.equilibrium_squeeze import (
     get_equilibrium_squeeze_ratio,
-    r0,
-    r0_from_squeeze_ratio_expr,
+    squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
 )
 
@@ -50,28 +49,28 @@ class SimulationResult:
     params: EtaParameters
     times: np.ndarray[Any, np.dtype[np.float64]]
     alpha: np.ndarray[Any, np.dtype[np.complex128]]
-    r0: np.ndarray[Any, np.dtype[np.complex128]]
+    squeeze_ratio: np.ndarray[Any, np.dtype[np.complex128]]
     numerical_noise: np.ndarray[Any, np.dtype[np.complex128]]
 
     @property
     def x(self) -> np.ndarray[Any, np.dtype[np.float64]]:
-        expect_x_r0 = r0_from_squeeze_ratio_expr(
-            squeeze_ratio_from_zeta_expr(expect_x)
-        ).subs(eta_m, self.params.eta_m)
-        expect_x_fn = sp.lambdify((alpha, r0), expect_x_r0, modules="numpy")
-        return np.real(expect_x_fn(self.alpha, self.r0))  # type: ignore[unknown]
+        expect_x_r = squeeze_ratio_from_zeta_expr(expect_x).subs(
+            eta_m, self.params.eta_m
+        )
+        expect_x_fn = sp.lambdify((alpha, squeeze_ratio), expect_x_r, modules="numpy")
+        return np.real(expect_x_fn(self.alpha, self.squeeze_ratio))  # type: ignore[unknown]
 
     @property
     def p(self) -> np.ndarray[Any, np.dtype[np.float64]]:
-        expect_p_r0 = r0_from_squeeze_ratio_expr(
-            squeeze_ratio_from_zeta_expr(expect_p)
-        ).subs(eta_m, self.params.eta_m)
+        expect_p_r = squeeze_ratio_from_zeta_expr(expect_p).subs(
+            eta_m, self.params.eta_m
+        )
         expect_p_fn = sp.lambdify(
-            (alpha, r0),
-            expect_p_r0.subs(hbar, hbar_value),
+            (alpha, squeeze_ratio),
+            expect_p_r.subs(hbar, hbar_value),
             modules="numpy",  # convert units
         )
-        return np.real(expect_p_fn(self.alpha, self.r0))  # type: ignore[unknown]
+        return np.real(expect_p_fn(self.alpha, self.squeeze_ratio))  # type: ignore[unknown]
 
     @property
     def alpha_full_derivative(self) -> np.ndarray[Any, np.dtype[np.complex128]]:
@@ -79,33 +78,34 @@ class SimulationResult:
         alpha_derivative = squeeze_ratio_from_zeta_expr(
             get_full_derivative("alpha").subs(sp.Symbol("V_1"), 0)
         )
-        alpha_derivative = r0_from_squeeze_ratio_expr(alpha_derivative)
         alpha_derivative = (
             explicit_from_dimensionless(alpha_derivative, self.params)
             * KBT_value
             / hbar_value
         )
         alpha_derivative_fn = sp.lambdify(
-            (alpha, r0, noise), alpha_derivative, modules="numpy"
+            (alpha, squeeze_ratio, noise), alpha_derivative, modules="numpy"
         )
         return np.array(
-            alpha_derivative_fn(self.alpha, self.r0, self.numerical_noise)  # type: ignore[unknown]
+            alpha_derivative_fn(self.alpha, self.squeeze_ratio, self.numerical_noise)  # type: ignore[unknown]
         ).astype(np.complex128)  # type: ignore[unknown]
 
     @property
     def x_derivative_equilibrium(self) -> np.ndarray[Any, np.dtype[np.float64]]:
         """Calculate the equilibrium derivative of x from alpha full derivative."""
-        expect_x_r0 = r0_from_squeeze_ratio_expr(
-            squeeze_ratio_from_zeta_expr(expect_x)
-        ).subs(eta_m, self.params.eta_m)
-        expect_dxdt_fn = sp.lambdify((alpha, r0), expect_x_r0, modules="numpy")
-        return np.real(expect_dxdt_fn(self.alpha_full_derivative, self.r0))  # type: ignore[unknown]
+        expect_x_r0 = squeeze_ratio_from_zeta_expr(expect_x).subs(
+            eta_m, self.params.eta_m
+        )
+        expect_dxdt_fn = sp.lambdify(
+            (alpha, squeeze_ratio), expect_x_r0, modules="numpy"
+        )
+        return np.real(expect_dxdt_fn(self.alpha_full_derivative, self.squeeze_ratio))  # type: ignore[unknown]
 
     def __getitem__(self, key: slice) -> SimulationResult:
         return SimulationResult(
             times=self.times[key],
             alpha=self.alpha[key],
-            r0=self.r0[key],
+            squeeze_ratio=self.squeeze_ratio[key],
             params=self.params,
             numerical_noise=self.numerical_noise[key],  # type: ignore[no-redef]
         )
@@ -115,7 +115,7 @@ class SimulationResult:
 class SimulationConfig:
     params: EtaParameters
     alpha_0: complex
-    r0_initial: complex
+    r_0: complex
     times: np.ndarray[Any, np.dtype[np.float64]]
 
 
@@ -134,10 +134,10 @@ def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr
     )
 
 
-def estimate_r0_initial(eta_lambda_val: float, eta_omega_val: float) -> np.complex128:
+def estimate_r0(eta_lambda_val: float, eta_omega_val: float) -> np.complex128:
     """Estimate the initial value of r0 based on eta_lambda and eta_omega."""
-    r0 = get_equilibrium_squeeze_ratio().subs(eta_m, 1)
-    r0 = sp.lambdify((eta_lambda, eta_omega), r0, modules="numpy")  # type: ignore[no-redef]
+    r_eq = get_equilibrium_squeeze_ratio()
+    r0 = sp.lambdify((eta_lambda, eta_omega), r_eq, modules="numpy")  # type: ignore[no-redef]
     return r0(eta_lambda_val, eta_omega_val)  # type: ignore unknown
 
 
@@ -168,28 +168,19 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
 
     zeta_derivative = get_deterministic_derivative("zeta").subs(sp.Symbol("V_1"), 0)
     # transform zeta derivative to R0 derivative for numerical stability
-    r0_derivative = r0_from_squeeze_ratio_expr(
-        squeeze_ratio_from_zeta_expr(-2 * zeta_derivative / (1 + zeta) ** 2)
-    ).subs(eta_m, 1)
+    r_derivative = (
+        squeeze_ratio_from_zeta_expr(-2 * zeta_derivative / (1 + zeta) ** 2) / eta_m
+    )
 
     # write alpha derivatives in terms of R0
     alpha_derivative_deterministic = squeeze_ratio_from_zeta_expr(
         get_deterministic_derivative("alpha").subs(sp.Symbol("V_1"), 0)
     )
-    alpha_derivative_deterministic = r0_from_squeeze_ratio_expr(
-        alpha_derivative_deterministic
-    )
     alpha_derivative_diffusion_re = squeeze_ratio_from_zeta_expr(
         get_stochastic_derivative("alpha").subs(noise, 1)
     )
-    alpha_derivative_diffusion_re = r0_from_squeeze_ratio_expr(
-        alpha_derivative_diffusion_re
-    )
     alpha_derivative_diffusion_im = squeeze_ratio_from_zeta_expr(
         get_stochastic_derivative("alpha").subs(noise, 1j)
-    )
-    alpha_derivative_diffusion_im = r0_from_squeeze_ratio_expr(
-        alpha_derivative_diffusion_im
     )
     # substitute explicit values into the derivatives
     alpha_derivative_deterministic = explicit_from_dimensionless(
@@ -201,18 +192,20 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     alpha_derivative_diffusion_im = explicit_from_dimensionless(
         alpha_derivative_diffusion_im, params
     )
-    r0_derivative_deterministic = explicit_from_dimensionless(r0_derivative, params)
+    r_derivative_deterministic = explicit_from_dimensionless(r_derivative, params)
     # Generate a matrix equation for the drift and diffusion terms
     # And turn them into numpy ufuncs for the stochastic differential equation solver
-    drift_expr = sp.Matrix(
-        [alpha_derivative_deterministic, r0_derivative_deterministic]
-    )
+    drift_expr = sp.Matrix([alpha_derivative_deterministic, r_derivative_deterministic])
     diff_expr = sp.Matrix(
         [[alpha_derivative_diffusion_re, alpha_derivative_diffusion_im], [0, 0]]
     )
     t = sp.Symbol("t", real=True)
-    drift_func = sp.lambdify((t, sp.Matrix([alpha, r0])), drift_expr, modules="numpy")  # type: ignore[no-redef]
-    diff_func = sp.lambdify((t, sp.Matrix([alpha, r0])), diff_expr, modules="numpy")  # type: ignore[no-redef]
+    drift_func = sp.lambdify(
+        (t, sp.Matrix([alpha, squeeze_ratio])), drift_expr, modules="numpy"
+    )  # type: ignore[no-redef]
+    diff_func = sp.lambdify(
+        (t, sp.Matrix([alpha, squeeze_ratio])), diff_expr, modules="numpy"
+    )  # type: ignore[no-redef]
 
     def coherent_derivative(
         y: np.ndarray[Any, np.dtype[np.complex128]], t: float
@@ -230,7 +223,7 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     sol = sdeint.stratSRS2(
         f=coherent_derivative,
         G=stochastic_derivative,
-        y0=np.array([config.alpha_0, config.r0_initial], dtype=np.complex128),
+        y0=np.array([config.alpha_0, config.r_0], dtype=np.complex128),
         tspan=simulation_times,
         dW=numerical_noise,
     )
@@ -238,6 +231,6 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
         times=config.times,
         params=config.params,
         alpha=sol[:, 0].astype(np.complex128),
-        r0=sol[:, 1].astype(np.complex128),
+        squeeze_ratio=sol[:, 1].astype(np.complex128),
         numerical_noise=numerical_noise[:, 0] + 1j * numerical_noise[:, 1],
     )

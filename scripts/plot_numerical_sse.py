@@ -10,7 +10,7 @@ from three_variable.simulation import (
     KBT_value,
     SimulationConfig,
     SimulationResult,
-    estimate_r0_initial,
+    estimate_r0,
     hbar_value,
     run_projected_simulation,
 )
@@ -35,8 +35,8 @@ def plot_alpha_r_evolution(
     ax0.set_ylabel("Alpha")
     ax0.legend(handles=[line0, line1], labels=["$\\Re(\\alpha)$", "$\\Im(\\alpha)$"])
 
-    (line0,) = ax1.plot(result.times, result.r0.real)
-    (line1,) = ax1.twinx().plot(result.times, result.r0.imag)
+    (line0,) = ax1.plot(result.times, result.squeeze_ratio.real)
+    (line1,) = ax1.twinx().plot(result.times, result.squeeze_ratio.imag)
     line1.set_color("C1")
     ax1.set_title("r0 Evolution")
     ax1.set_xlabel("Time")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     eta_omega_val = 1
     time_scale = hbar_value / KBT_value
     print("Estimating initial r0")
-    r0_initial_estimate = estimate_r0_initial(
+    r0_estimate = estimate_r0(
         eta_lambda_val=eta_lamda_val,
         eta_omega_val=eta_omega_val,
     )
@@ -124,18 +124,18 @@ if __name__ == "__main__":
                 kbt_div_hbar=1,
             ),
             alpha_0=0.000001 + 0.0j,
-            r0_initial=r0_initial_estimate,
+            r_0=r0_estimate,
             times=np.linspace(0, 1000, 50000) * time_scale,
         )
     )
 
     print("Simulation completed")
-    print("Final (equilibrium) r:", solution.r0[-1])
+    print("Final (equilibrium) r:", solution.squeeze_ratio[-1])
 
     fig, _ = plot_alpha_r_evolution(solution)
     fig.savefig("alpha_r_evolution.png", dpi=300)
 
-    fig, _ = plot_classical_evolution(solution[-10000::])
+    fig, _ = plot_classical_evolution(solution[-1000::])
     fig.savefig("classical_evolution.png", dpi=300)
 
     plt.show()

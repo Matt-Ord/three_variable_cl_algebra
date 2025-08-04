@@ -37,11 +37,6 @@ def zeta_from_squeeze_ratio_expr(expr: sp.Expr) -> sp.Expr:
     return sp.simplify(expr.subs(squeeze_ratio, ratio_expr), rational=True)
 
 
-def r0_from_squeeze_ratio_expr(expr: sp.Expr) -> sp.Expr:
-    """Convert the squeezing ratio to the r0 value."""
-    return sp.simplify(expr.subs(squeeze_ratio, eta_m * r0))
-
-
 @timed
 def get_squeeze_derivative_zeta() -> sp.Expr:
     """Get the squeeze derivative with respect to zeta."""
@@ -65,24 +60,6 @@ def get_equilibrium_squeeze_ratio(*, positive: bool = True) -> sp.Expr:
     factored = get_squeeze_derivative_zeta()
     numer, _denom = sp.together(factored).as_numer_denom()
     return sp.solve(numer, squeeze_ratio)[0 if positive else 1]
-
-
-def get_equilibrium_zeta(*, positive: bool = True) -> sp.Expr:
-    ratio = get_equilibrium_squeeze_ratio(positive=positive)
-    zeta_expr = sp.solve(ratio_expr - squeeze_ratio, zeta)[0]
-    return sp.simplify(zeta_expr.subs({squeeze_ratio: ratio}))
-
-
-@timed
-@cache
-def get_equilibrium_derivative(ty: Literal["zeta", "alpha"]) -> sp.Expr:
-    """Get the derivative for the system at equilibrium."""
-    if ty == "zeta":
-        return sp.Integer(0)
-    if ty == "alpha":
-        equilibrium_zeta = get_equilibrium_zeta(positive=True)
-        return get_full_derivative("alpha").subs({zeta: equilibrium_zeta})
-    return None
 
 
 def get_equilibrium_zeta(*, positive: bool = True) -> sp.Expr:
