@@ -165,67 +165,15 @@ def get_full_derivative(ty: Literal["zeta", "alpha", "phi"]) -> sp.Expr:
     return deterministic_derivative + stochastic_derivative
 
 
-def _get_classical_deterministic_derivative(ty: Literal["x", "p"]) -> Path:
+def _get_classical_deterministic_derivative(
+    ty: Literal["x", "p"],
+) -> Path:
     return Path(f".cache/classical_deterministic_derivative.{ty}")
 
 
 @file_cached(_get_classical_deterministic_derivative)
 @timed
 def get_classical_deterministic_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_deterministic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
-
-    return sp.simplify(
-        expect_var.subs(
-            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def _get_classical_stochastic_derivative(ty: Literal["x", "p"]) -> Path:
-    return Path(f".cache/classical_stochastic_derivative.{ty}")
-
-
-@file_cached(_get_classical_stochastic_derivative)
-@timed
-def get_classical_stochastic_derivative(
-    ty: Literal["x", "p"],
-) -> sp.Expr:
-    # Write <x> and <p> in terms of the real and imaginary parts of alpha.
-    # Then replace re(alpha) and im(alpha) with their derivatives.
-    # This gives us d/dt <x> etc.
-    # Note this assumes d \zeta / dt = 0, which is true at equilibrium.
-    derivative_xp = xp_expression_from_alpha(get_stochastic_derivative("alpha"))
-
-    expect_var = expect_x if ty == "x" else expect_p
-    expect_var = expect_var.subs({alpha: sp.re(alpha) + 1j * sp.im(alpha)})
-
-    return sp.simplify(
-        expect_var.subs(
-            {sp.re(alpha): sp.re(derivative_xp), sp.im(alpha): sp.im(derivative_xp)}
-        ),
-        rational=True,
-    )
-
-
-def _get_classical_deterministic_derivative_complex_conj_pair(
-    ty: Literal["x", "p"],
-) -> Path:
-    return Path(f".cache/classical_deterministic_derivative_complex_conj_pair.{ty}")
-
-
-@file_cached(_get_classical_deterministic_derivative_complex_conj_pair)
-@timed
-def get_classical_deterministic_derivative_complex_conj_pair(
     ty: Literal["x", "p"],
 ) -> sp.Expr:
     # Write <x> and <p> in terms of the real and imaginary parts of alpha.
@@ -244,15 +192,15 @@ def get_classical_deterministic_derivative_complex_conj_pair(
     )
 
 
-def _get_classical_stochastic_derivative_complex_conj_pair(
+def _get_classical_stochastic_derivative(
     ty: Literal["x", "p"],
 ) -> Path:
-    return Path(f".cache/classical_stochastic_derivative_complex_conj_pair.{ty}")
+    return Path(f".cache/classical_stochastic_derivative.{ty}")
 
 
-@file_cached(_get_classical_stochastic_derivative_complex_conj_pair)
+@file_cached(_get_classical_stochastic_derivative)
 @timed
-def get_classical_stochastic_derivative_complex_conj_pair(
+def get_classical_stochastic_derivative(
     ty: Literal["x", "p"],
 ) -> sp.Expr:
     # Write <x> and <p> in terms of the real and imaginary parts of alpha.
