@@ -9,19 +9,22 @@ import numpy as np
 import sympy as sp
 from scipy.constants import hbar as hbar_value  # type: ignore scipy
 from slate_core.util import timed
+from sympy import Add
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import expect_x_squared, uncertainty_squared
 from three_variable.projected_sse import (
+    get_classical_deterministic_derivative,
+    get_classical_stochastic_derivative,
     get_environment_derivative,
     get_full_derivative,
     get_system_derivative,
 )
-from three_variable.symbols import eta_lambda, eta_m, eta_omega, zeta
+from three_variable.symbols import eta_lambda, eta_m, eta_omega, p, x, zeta
 from three_variable.util import file_cached
 
 squeeze_ratio = sp.Symbol(r"R")
-ratio_expr = (1 - zeta) / (1 + zeta)
+ratio_expr = (1 - zeta) / (eta_m * (1 + zeta))
 
 
 def squeeze_ratio_from_zeta_expr(expr: sp.Expr) -> sp.Expr:
@@ -142,3 +145,33 @@ def evaluate_equilibrium_expect_x_squared(
 
     uncertainty_from_ratio = sp.lambdify((squeeze_ratio), ratio_formula)
     return np.real_if_close(uncertainty_from_ratio(equilibrium_R))  # type: ignore[no-untyped-call]
+
+
+def _group_x_p_terms(expr: sp.Expr) -> sp.Expr:
+    """Group the x and p terms in an expression."""
+    terms = Add.make_args(sp.collect(sp.expand(expr), [x, p]))
+    return sum(sp.simplify(term) for term in terms)  # type: ignore unknown
+
+
+def _get_classical_derivative_squeeze_ratio(
+    ty: Literal["x", "p"], part: Literal["deterministic", "stochastic"]
+) -> Path:
+    """Get the classical equilibrium derivative for x and p in terms of the squeeze ratio."""
+    return Path(f".cache/classical_derivative_squeeze_ratio.{ty}.{part}")
+
+
+@file_cached(_get_classical_derivative_squeeze_ratio)
+@timed
+def get_classical_derivative_squeeze_ratio(
+    ty: Literal["x", "p"], part: Literal["deterministic", "stochastic"]
+) -> sp.Expr:
+    """Get the classical equilibrium derivative for x and p in terms of the squeeze ratio."""
+    if part == "deterministic":
+        deterministic = get_classical_deterministic_derivative(ty)
+        deterministic = squeeze_ratio_from_zeta_expr(deterministic)
+        return _group_x_p_terms(deterministic)
+
+    if part == "stochastic":
+        stochastic = get_classical_stochastic_derivative(ty)
+        return squeeze_ratio_from_zeta_expr(stochastic)
+    return None
