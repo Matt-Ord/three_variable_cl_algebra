@@ -123,6 +123,9 @@ def evaluate_equilibrium_uncertainty(
     return np.real_if_close(uncertainty_from_ratio(equilibrium_R))  # type: ignore[no-untyped-call]
 
 
+_eta_m_symbol = eta_m
+
+
 def evaluate_equilibrium_expect_x_squared(
     eta_m: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     eta_omega: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
@@ -142,8 +145,8 @@ def evaluate_equilibrium_expect_x_squared(
         }
     )
 
-    uncertainty_from_ratio = sp.lambdify((squeeze_ratio), ratio_formula)
-    return np.real_if_close(uncertainty_from_ratio(equilibrium_R))  # type: ignore[no-untyped-call]
+    uncertainty_from_ratio = sp.lambdify((squeeze_ratio, _eta_m_symbol), ratio_formula)
+    return np.real_if_close(uncertainty_from_ratio(equilibrium_R, eta_m))  # type: ignore[no-untyped-call]
 
 
 def _group_x_p_terms(expr: sp.Expr) -> sp.Expr:
