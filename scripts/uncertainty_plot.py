@@ -109,6 +109,30 @@ def plot_uncertainty_against_lambda_w() -> None:
     fig.show()
 
 
+def plot_uncertainty_against_lambda_w_logspace() -> None:
+    eta_lambda = np.logspace(-5, 5, 1000)
+    eta_omega = np.logspace(-5, 5, 1000)
+    eta_lambda_grid, eta_omega_grid = np.meshgrid(eta_lambda, eta_omega)
+    eta_m = 1 * np.ones_like(eta_lambda_grid)
+    uncertainty = evaluate_equilibrium_uncertainty(
+        eta_m, eta_omega_grid, eta_lambda_grid
+    )
+    fig, ax = plot.get_figure()
+
+    mesh = ax.pcolormesh(eta_lambda_grid, eta_omega_grid, 2 * np.sqrt(uncertainty) - 1)
+    mesh.set_clim(0, None)
+
+    fig.colorbar(mesh)
+    ax.set_title(
+        r"Plot of quantum uncertainty against $\eta_\lambda$ and $\eta_\omega$"
+    )
+    ax.set_xlabel(r"$\eta_\lambda$")
+    ax.set_ylabel(r"$\eta_\omega$")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    fig.show()
+
+
 def plot_uncertainty_against_lambda_w_lower() -> None:
     eta_lambda = np.linspace(0, 1, 1000)
     eta_omega = np.linspace(0.001, 1, 1000)
@@ -321,6 +345,7 @@ def plot_uncertainty_x_against_lambda_free_particle() -> None:
 
 if __name__ == "__main__":
     plot_uncertainty_against_lambda_w()
+    plot_uncertainty_against_lambda_w_logspace()
     plot_uncertainty_against_lambda_w_lower()
     plot_uncertainty_against_lambda_free_particle()
     plot_uncertainty_x_against_lambda_free_particle()
