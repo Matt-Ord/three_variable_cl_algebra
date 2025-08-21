@@ -4,13 +4,16 @@ from typing import TYPE_CHECKING, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.constants import (  # type: ignore scipy
+    Boltzmann,
+)
+from scipy.constants import hbar as hbar_value  # type: ignore scipy
 
 from three_variable.simulation import (
     EtaParameters,
     SimulationConfig,
     SimulationResult,
     estimate_r0,
-    hbar_value,
     run_projected_simulation,
 )
 
@@ -19,7 +22,10 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 
-def plot_alpha_zeta_evolution(
+KBT_value = Boltzmann * 300
+
+
+def plot_alpha_r_evolution(
     result: SimulationResult,
 ) -> tuple[Figure, tuple[Axes, Axes]]:
     fig, [ax0, ax1] = plt.subplots(nrows=2)
@@ -89,8 +95,8 @@ if __name__ == "__main__":
             params=EtaParameters(
                 eta_lambda=0.01,
                 eta_m=eta_m_val,
-                eta_omega=1,
-                kbt_div_hbar=1.0,
+                eta_omega=eta_omega_val,
+                kbt_div_hbar=1 / time_scale,
             ),
             alpha_0=0.000001 + 0.0j,
             r_0=r0_estimate + 0.5,
@@ -101,7 +107,7 @@ if __name__ == "__main__":
     print("Simulation completed")
     print("Final (equilibrium) r:", solution.squeeze_ratio[-1])
 
-    fig, _ = plot_alpha_zeta_evolution(solution)
+    fig, _ = plot_alpha_r_evolution(solution)
     fig.savefig("alpha_zeta_evolution.png", dpi=300)
 
     fig, _ = plot_classical_evolution(solution[-1000::])
