@@ -76,13 +76,11 @@ class SimulationResult:
         alpha_derivative = squeeze_ratio_from_zeta_expr(
             get_full_derivative("alpha").subs(sp.Symbol("V_1"), 0)
         )
-        alpha_derivative = (
-            explicit_from_dimensionless(alpha_derivative, self.params)
-            * KBT_value
-            / hbar_value
-        )
+        alpha_derivative = explicit_from_dimensionless(alpha_derivative, self.params)
         alpha_derivative_fn = sp.lambdify(
-            (alpha, squeeze_ratio, noise), alpha_derivative, modules="numpy"
+            (alpha, squeeze_ratio, noise),
+            alpha_derivative * self.params.kbt_div_hbar,
+            modules="numpy",
         )
         return np.array(
             alpha_derivative_fn(self.alpha, self.squeeze_ratio, self.numerical_noise)  # type: ignore[unknown]
