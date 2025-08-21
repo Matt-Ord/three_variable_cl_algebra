@@ -75,8 +75,8 @@ def plot_classical_evolution(
 
 if __name__ == "__main__":
     eta_m_val = 1e22
-    eta_lamda_val = 60
-    eta_omega_val = 1
+    eta_lamda_val = 10
+    eta_omega_val = 3
     time_scale = hbar_value / KBT_value
     print("Estimating initial r0")
     r0_estimate = estimate_r0(
@@ -93,8 +93,8 @@ if __name__ == "__main__":
                 kbt_div_hbar=1.0,
             ),
             alpha_0=0.000001 + 0.0j,
-            r_0=r0_estimate,
-            times=np.linspace(0, 1000, 50000) * time_scale,
+            r_0=r0_estimate + 0.5,
+            times=np.linspace(0, 200, 10000) * time_scale,
         )
     )
 
@@ -106,5 +106,8 @@ if __name__ == "__main__":
 
     fig, _ = plot_classical_evolution(solution[-1000::])
     fig.savefig("classical_evolution.png", dpi=300)
+
+    fig, _ = plot_alpha_r_evolution(solution[-1000::])
+    fig.savefig("alpha_r_evolution_last.png", dpi=300)
 
     plt.show()
