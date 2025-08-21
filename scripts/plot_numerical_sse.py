@@ -141,7 +141,7 @@ if __name__ == "__main__":
                 kbt_div_hbar=1.0,
             ),
             alpha_0=0.0 + 0.0j,
-            zeta_0=-0.002 + 0.0j,
+            zeta_0=0.003 * np.exp(1j * 0.01),
             times=np.linspace(0, 5, int(eta_m_val * 1000)),
         )
     )
