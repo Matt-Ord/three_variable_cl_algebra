@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sdeint  # type: ignore[import-untyped]
 import sympy as sp
+<<<<<<< HEAD
+=======
+from slate_core.util import timed
+>>>>>>> 2cca05c (analytical expression for gaussian solution to fokker planck equation, calculate energy distribution from analytical expression and from numerical simulation based on sde)
 from sympy.physics.units import hbar
 
 from three_variable.coherent_states import (
@@ -29,8 +33,12 @@ from three_variable.symbols import (
     hbar as hbar_symbol,
 )
 
+<<<<<<< HEAD
 if TYPE_CHECKING:
     from .physical_systems import EtaParameters
+=======
+hbar_value = 1.0545718e-34
+>>>>>>> 2cca05c (analytical expression for gaussian solution to fokker planck equation, calculate energy distribution from analytical expression and from numerical simulation based on sde)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -78,12 +86,42 @@ def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr
                 eta_lambda: params.eta_lambda,
                 eta_m: params.eta_m,
                 eta_omega: params.eta_omega,
-                KBT: params.kbt_div_hbar * hbar,
+                KBT: hbar,  # KBT = hbar, scaled
             }
         )
     )
 
 
+<<<<<<< HEAD
+=======
+def estimate_r0(eta_lambda_val: float, eta_omega_val: float) -> np.complex128:
+    """Estimate the initial value of r0 based on eta_lambda and eta_omega."""
+    r_eq = get_equilibrium_squeeze_ratio()
+    r0 = sp.lambdify((eta_lambda, eta_omega), r_eq, modules="numpy")  # type: ignore[no-redef]
+    return r0(eta_lambda_val, eta_omega_val)  # type: ignore unknown
+
+
+def simulation_time_and_noise(
+    config: SimulationConfig,
+) -> tuple[
+    np.ndarray[Any, np.dtype[np.float64]], np.ndarray[Any, np.dtype[np.float64]]
+]:
+    """Generate simulation times and numerical noise."""
+    # Generate the noise
+    generator = np.random.default_rng(seed=42)
+    # transform time to units of hbar / KBT
+    simulation_times = config.times * config.params.kbt_div_hbar
+    time_step = (simulation_times[len(simulation_times) - 1] - simulation_times[0]) / (
+        len(simulation_times) - 1
+    )  # assuming equal time steps
+    numerical_noise = sdeint.deltaW(
+        len(simulation_times) - 1, 2, time_step, generator
+    )  # shape (N, 2)
+    return simulation_times, numerical_noise
+
+
+@timed
+>>>>>>> 2cca05c (analytical expression for gaussian solution to fokker planck equation, calculate energy distribution from analytical expression and from numerical simulation based on sde)
 def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     y0 = np.array([config.alpha_0, config.zeta_0], dtype=np.complex128)
     params = config.params

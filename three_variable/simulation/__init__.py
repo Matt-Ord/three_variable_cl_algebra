@@ -68,6 +68,10 @@ __all__ = [
     "EtaParameters",
     "SimulationConfig",
     "SimulationResult",
+<<<<<<< HEAD
+=======
+    "estimate_r0",
+>>>>>>> 2cca05c (analytical expression for gaussian solution to fokker planck equation, calculate energy distribution from analytical expression and from numerical simulation based on sde)
     "explicit_from_dimensionless",
     "get_condition_from_params",
     "run_projected_simulation",
