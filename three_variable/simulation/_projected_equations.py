@@ -134,7 +134,9 @@ def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr
     )
 
 
-def estimate_r0(eta_lambda_val: float, eta_omega_val: float) -> np.complex128:
+def evaluate_equilibrium_squeeze_ratio(
+    eta_lambda_val: float, eta_omega_val: float
+) -> np.complex128:
     """Estimate the initial value of r0 based on eta_lambda and eta_omega."""
     r_eq = get_equilibrium_squeeze_ratio()
     r0 = sp.lambdify((eta_lambda, eta_omega), r_eq, modules="numpy")  # type: ignore[no-redef]
@@ -201,11 +203,15 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     )
     t = sp.Symbol("t", real=True)
     drift_func = sp.lambdify(
-        (t, sp.Matrix([alpha, squeeze_ratio])), drift_expr, modules="numpy"
-    )  # type: ignore[no-redef]
+        (t, sp.Matrix([alpha, squeeze_ratio])),  # type: ignore[no-redef]
+        drift_expr,  # type: ignore[no-redef]
+        modules="numpy",
+    )
     diff_func = sp.lambdify(
-        (t, sp.Matrix([alpha, squeeze_ratio])), diff_expr, modules="numpy"
-    )  # type: ignore[no-redef]
+        (t, sp.Matrix([alpha, squeeze_ratio])),  # type: ignore[no-redef]
+        diff_expr,  # type: ignore[no-redef]
+        modules="numpy",
+    )
 
     def coherent_derivative(
         y: np.ndarray[Any, np.dtype[np.complex128]], t: float

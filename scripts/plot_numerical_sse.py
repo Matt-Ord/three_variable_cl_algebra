@@ -10,7 +10,7 @@ from three_variable.simulation import (
     KBT_value,
     SimulationConfig,
     SimulationResult,
-    estimate_r0,
+    evaluate_equilibrium_squeeze_ratio,
     hbar_value,
     run_projected_simulation,
 )
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     eta_omega_val = 1
     time_scale = hbar_value / KBT_value
     print("Estimating initial r0")
-    r0_estimate = estimate_r0(
+    equilibrium_ratio = evaluate_equilibrium_squeeze_ratio(
         eta_lambda_val=eta_lamda_val,
         eta_omega_val=eta_omega_val,
     )
@@ -124,7 +124,7 @@ if __name__ == "__main__":
                 kbt_div_hbar=1,
             ),
             alpha_0=0.000001 + 0.0j,
-            r_0=r0_estimate,
+            r_0=equilibrium_ratio,
             times=np.linspace(0, 1000, 50000) * time_scale,
         )
     )
