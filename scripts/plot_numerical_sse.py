@@ -4,8 +4,13 @@ from typing import TYPE_CHECKING, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sympy as sp
 from matplotlib.ticker import MaxNLocator
 
+from three_variable.equilibrium_squeeze import (
+    squeeze_ratio,
+    squeeze_ratio_from_zeta_expr,
+)
 from three_variable.simulation import (
     EtaParameters,
     KBT_value,
@@ -15,6 +20,7 @@ from three_variable.simulation import (
     hbar_value,
     run_projected_simulation,
 )
+from three_variable.symbols import eta_m, zeta
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -142,16 +148,18 @@ def plot_r_theta_evolution(
 ) -> tuple[Figure, tuple[Axes, Axes]]:
     fig, ax0 = plt.subplots(figsize=(5, 3))
 
-    (line0,) = ax0.plot(result.times, np.abs(result.zeta))
+    expect_zeta_r0 = squeeze_ratio_from_zeta_expr(zeta).subs(eta_m, 1)
+    expect_zeta_fn = sp.lambdify((squeeze_ratio), expect_zeta_r0, modules="numpy")
+    zeta_vals = np.asarray(expect_zeta_fn(result.squeeze_ratio))
+
+    (line0,) = ax0.plot(result.times, np.abs(zeta_vals))
     ax1 = ax0.twinx()
-    (line1,) = ax1.plot(result.times, np.unwrap(np.angle(result.zeta)))
+    (line1,) = ax1.plot(result.times, np.unwrap(np.angle(zeta_vals)))
     line1.set_color("C1")
     ax0.set_title("Squeezing Evolution")
     ax0.set_xlabel("Time /au")
     ax0.set_ylabel("Squeezing $r$")
     ax1.set_ylabel(r"Squeezing $\theta$")
-    ax0.set_ylim(0, None)
-    ax1.set_ylim(0, None)
     ax1.legend(handles=[line0, line1], labels=["$r$", r"$\theta$"])
 
     fig.tight_layout()
@@ -180,7 +188,7 @@ if __name__ == "__main__":
                 eta_omega=eta_omega_val,
                 kbt_div_hbar=1,
             ),
-            alpha_0=0.000001 + 0.0j,
+            alpha_0=0.0 + 0.0j,
             r_0=equilibrium_ratio,
             times=np.linspace(0, 1000, 50000) * time_scale,
         )
@@ -188,6 +196,7 @@ if __name__ == "__main__":
 
     print("Simulation completed")
     print("Final (equilibrium) r:", solution.squeeze_ratio[-1])
+    print("Error in r:", equilibrium_ratio - solution.squeeze_ratio[-1])
 
     fig, _ = plot_alpha_r_evolution(solution)
     fig.savefig("alpha_r_evolution.png", dpi=300)
@@ -201,14 +210,14 @@ if __name__ == "__main__":
     solution = run_projected_simulation(
         SimulationConfig(
             params=EtaParameters(
-                eta_lambda=0.01,
+                eta_lambda=eta_lamda_val,
                 eta_m=eta_m_val,
-                eta_omega=1,
-                kbt_div_hbar=1.0,
+                eta_omega=eta_omega_val,
+                kbt_div_hbar=1,
             ),
             alpha_0=0.0 + 0.0j,
             r_0=1.5 * equilibrium_ratio * np.exp(1j * 0.1),
-            times=np.linspace(0, 0.03, int(eta_m_val * 1000)),
+            times=np.linspace(0, 50, 10000) * time_scale,
         )
     )
     fig, _ = plot_r_theta_evolution(solution)
