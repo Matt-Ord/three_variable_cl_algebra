@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import sympy as sp
+from matplotlib import pyplot as plt
 from matplotlib.colors import SymLogNorm
+from matplotlib.ticker import LogLocator
 from scipy.constants import Boltzmann  # type: ignore scipy
 from slate_core import plot
 from slate_core.util import timed
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
 
     from matplotlib.axes import Axes
     from matplotlib.collections import QuadMesh
+    from matplotlib.colorbar import Colorbar
     from matplotlib.figure import Figure
 
 
@@ -49,10 +52,16 @@ def depends_only_on(expr: sp.Expr, allowed_symbols: Iterable[sp.Symbol]) -> bool
 
 
 def plot_lambda_omega_formula_high_mass(
-    formula: sp.Expr, *, measure: plot.Measure = "real", plot_atoms: bool = False
-) -> tuple[Figure, Axes, QuadMesh]:
-    eta_omega_value = np.logspace(-10, 10, 500)
-    eta_lambda_value = np.logspace(-10, 10, 500)
+    formula: sp.Expr,
+    *,
+    measure: plot.Measure = "real",
+    plot_atoms: bool = False,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes, QuadMesh, Colorbar]:
+    omega_value = np.logspace(-10, 10, 500)
+    eta_omega_value = 1 / omega_value
+    lambda_value = np.logspace(-10, 10, 500)
+    eta_lambda_value = 1 / lambda_value
 
     assert depends_only_on(formula, {eta_lambda, eta_omega, squeeze_ratio}), (
         "Formula must depend only on eta_lambda, eta_omega, and squeeze_ratio"
@@ -70,25 +79,26 @@ def plot_lambda_omega_formula_high_mass(
 
     l_v, o_v = np.meshgrid(eta_lambda_value, eta_omega_value, indexing="xy")
 
-    fig, ax = plot.get_figure()
+    fig, ax = plot.get_figure(ax=cast("plot.Axes", ax))
     mesh = ax.pcolormesh(
-        eta_lambda_value,
-        eta_omega_value,
+        lambda_value,
+        omega_value,
         plot.get_measured_data(formula_fn(l_v, o_v, ratio_fn(l_v, o_v)), measure),  # type: ignore args
         cmap="viridis",
     )
     if plot_atoms:
         for name, parameters, c in PHYSICAL_PARAMS:
-            scatter = ax.scatter(parameters.eta_lambda, parameters.eta_omega)  # type: ignore unknown
+            scatter = ax.scatter(1 / parameters.eta_lambda, 1 / parameters.eta_omega)  # type: ignore unknown
             scatter.set_label(name)
             scatter.set_color(c)
             ax.legend(loc="upper right")
-    fig.colorbar(mesh, ax=ax)
+    cbar = fig.colorbar(mesh, ax=ax)
+
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(r"$\eta_\lambda$")
-    ax.set_ylabel(r"$\eta_\omega$")
-    return fig, ax, mesh
+    ax.set_xlabel(r"$\Lambda$")
+    ax.set_ylabel(r"$\Omega$")
+    return fig, ax, mesh, cbar
 
 
 def plot_effective_frequency_high_mass() -> None:
@@ -140,7 +150,9 @@ def plot_effective_frequency_high_mass() -> None:
         / kb_t_val
     )
 
-    fig, ax, mesh = plot_lambda_omega_formula_high_mass(omega_fraction, measure="real")
+    fig, ax, mesh, _ = plot_lambda_omega_formula_high_mass(
+        omega_fraction, measure="real"
+    )
     mesh.set_clim(0, None)
     ax.set_title("Effective Frequency (Real Value)")
     fig.savefig("effective_frequency.png", dpi=300)
@@ -149,17 +161,17 @@ def plot_effective_frequency_high_mass() -> None:
 
 def plot_zeta() -> None:
     r0 = get_equilibrium_zeta().subs({eta_m: 1})
-    fig, ax, _mesh = plot_lambda_omega_formula_high_mass(r0, measure="abs")
+    fig, ax, _mesh, _ = plot_lambda_omega_formula_high_mass(r0, measure="abs")
     ax.set_title("Zeta")
     fig.savefig("r0_abs.png", dpi=300)
     fig.show()
 
-    fig, ax, _mesh = plot_lambda_omega_formula_high_mass(r0, measure="real")
+    fig, ax, _mesh, _ = plot_lambda_omega_formula_high_mass(r0, measure="real")
     ax.set_title("Zeta (Real Part)")
     fig.savefig("r0_real.png", dpi=300)
     fig.show()
 
-    fig, ax, _mesh = plot_lambda_omega_formula_high_mass(r0, measure="imag")
+    fig, ax, _mesh, _ = plot_lambda_omega_formula_high_mass(r0, measure="imag")
     ax.set_title("Zeta (Imaginary Part)")
     fig.savefig("r0_imag.png", dpi=300)
     fig.show()
@@ -190,7 +202,9 @@ def plot_effective_mass_high_mass() -> None:
     )
     mass_fraction = 2 * kb_t_val / (hbar_val**2 * eta_m_val * x_derivative_p_high_mass)
 
-    fig, ax, _mesh = plot_lambda_omega_formula_high_mass(mass_fraction, measure="real")
+    fig, ax, _mesh, _ = plot_lambda_omega_formula_high_mass(
+        mass_fraction, measure="real"
+    )
     ax.set_title("Effective Mass (Real Value)")
     fig.savefig("effective_mass.png", dpi=300)
     fig.show()
@@ -221,7 +235,7 @@ def plot_effective_friction_high_mass() -> None:
     )
     lambda_fraction = -p_derivative_p_high_mass * eta_lambda * hbar_val / kb_t_val / 2
 
-    fig, ax, _mesh = plot_lambda_omega_formula_high_mass(
+    fig, ax, _mesh, _ = plot_lambda_omega_formula_high_mass(
         lambda_fraction, measure="real"
     )
     ax.set_title("Effective Friction (Real Value)")
@@ -253,7 +267,9 @@ def plot_x_force_high_mass() -> None:
         }
     )
     lambda_fraction = x_derivative_x_high_mass
-    fig, ax, mesh = plot_lambda_omega_formula_high_mass(lambda_fraction, measure="real")
+    fig, ax, mesh, _ = plot_lambda_omega_formula_high_mass(
+        lambda_fraction, measure="real"
+    )
     mesh.set_norm(SymLogNorm(linthresh=10, linscale=5))
     ax.set_title("X Force (Real Value)")
     fig.savefig("x_force.png", dpi=300)
@@ -283,10 +299,16 @@ def plot_p_fluctuation() -> None:
         * eta_lambda
         / (2 * eta_m_val * hbar_val * kb_t_val)
     )
-    fig, ax, mesh = plot_lambda_omega_formula_high_mass(lambda_fraction, measure="abs")
+    fig, ax = plt.subplots(figsize=(4, 3))
+    fig, ax, mesh, cbar = plot_lambda_omega_formula_high_mass(
+        lambda_fraction - 1, measure="real", ax=ax
+    )
     mesh.set_norm(SymLogNorm(linthresh=0.01, linscale=1))
-    ax.set_title("p mean squared fluctuation")
-    fig.savefig("p_fluctuation.png", dpi=300)
+    cbar.set_ticks([-(10**-1), 0, 10**1, 10**5, 10**10])
+    fig.tight_layout()
+    ax.xaxis.set_major_locator(LogLocator(numticks=5))
+    ax.yaxis.set_major_locator(LogLocator(numticks=5))
+    fig.savefig("p_fluctuation.png", dpi=800)
     fig.show()
 
 
@@ -307,7 +329,7 @@ def plot_x_fluctuation() -> None:
         }
     )
     p_over_m = sp.sqrt(2 / eta_m_val) * (kb_t_val / hbar_val)
-    fig, ax, mesh = plot_lambda_omega_formula_high_mass(
+    fig, ax, mesh, _ = plot_lambda_omega_formula_high_mass(
         x_stochastic / p_over_m, measure="abs"
     )
     mesh.set_norm(SymLogNorm(linthresh=1e-15, linscale=1))
@@ -321,7 +343,6 @@ if __name__ == "__main__":
     plot_x_fluctuation()
     plot_p_fluctuation()
     plot_effective_friction_high_mass()
-    input()
     plot_effective_frequency_high_mass()
     plot_effective_mass_high_mass()
     plot_x_force_high_mass()
