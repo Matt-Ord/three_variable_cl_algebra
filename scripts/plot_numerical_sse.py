@@ -20,6 +20,7 @@ from three_variable.simulation import (
     hbar_value,
     run_projected_simulation,
 )
+from three_variable.simulation.physical_systems import ELENA_NA_CU
 from three_variable.symbols import eta_m, zeta
 
 if TYPE_CHECKING:
@@ -118,9 +119,17 @@ def plot_classical_evolution(
     ax1 = ax0.twinx()
 
     times = result.times - result.times[0]
+    ax0_line = ax0.axhline(0)
+    ax0_line.set_alpha(0.5)
+    ax0_line.set_linestyle("--")
+    ax0_line.set_color("black")
     (line0,) = ax0.plot(times, result.x, label="$x$")
     line0.set_color("C0")
 
+    ax1_line = ax1.axhline(0)
+    ax1_line.set_alpha(0.5)
+    ax1_line.set_linestyle("--")
+    ax1_line.set_color("black")
     (line1,) = ax1.plot(times, result.p, label="$p$")
     line1.set_color("C1")
 
@@ -170,20 +179,20 @@ def plot_r_theta_evolution(
 
 
 if __name__ == "__main__":
-    eta_m_val = 1e22
-    eta_lamda_val = 60
-    eta_omega_val = 1
+    eta_m_val = ELENA_NA_CU.eta_parameters.eta_m
+    eta_lambda_val = ELENA_NA_CU.eta_parameters.eta_lambda
+    eta_omega_val = ELENA_NA_CU.eta_parameters.eta_omega
     time_scale = hbar_value / KBT_value
     print("Estimating initial r0")
     equilibrium_ratio = evaluate_equilibrium_squeeze_ratio(
-        eta_lambda_val=eta_lamda_val,
+        eta_lambda_val=eta_lambda_val,
         eta_omega_val=eta_omega_val,
     )
     print("Running simulation")
     solution = run_projected_simulation(
         SimulationConfig(
             params=EtaParameters(
-                eta_lambda=eta_lamda_val,
+                eta_lambda=eta_lambda_val,
                 eta_m=eta_m_val,
                 eta_omega=eta_omega_val,
                 kbt_div_hbar=1,
@@ -210,7 +219,7 @@ if __name__ == "__main__":
     solution = run_projected_simulation(
         SimulationConfig(
             params=EtaParameters(
-                eta_lambda=eta_lamda_val,
+                eta_lambda=eta_lambda_val,
                 eta_m=eta_m_val,
                 eta_omega=eta_omega_val,
                 kbt_div_hbar=1,
