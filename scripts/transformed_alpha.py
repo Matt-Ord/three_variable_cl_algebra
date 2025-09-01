@@ -68,12 +68,6 @@ from three_variable.symbols import (
 )
 
 KBT_value = Boltzmann * ELENA_NA_CU.temperature * 2
-
-print(ELENA_NA_CU.m)
-print(ELENA_NA_CU.lambda_)
-print(ELENA_NA_CU.omega)
-print(ELENA_NA_CU.temperature)
-input()
 # note hbar=KBT when calculating inertia, stiffness, etc. hbar value in SI unit used in energy calculation.
 eta_params = EtaParameters(
     eta_lambda=60,

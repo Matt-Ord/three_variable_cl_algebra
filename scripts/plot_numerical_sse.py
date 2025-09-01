@@ -100,7 +100,7 @@ if __name__ == "__main__":
             ),
             alpha_0=0.000001 + 0.0j,
             r_0=r0_estimate + 0.5,
-            times=np.linspace(0, 200, 10000) * time_scale,
+            times=np.linspace(0, 1000, 4000) * time_scale,
         )
     )
 
@@ -110,10 +110,10 @@ if __name__ == "__main__":
     fig, _ = plot_alpha_r_evolution(solution)
     fig.savefig("alpha_zeta_evolution.png", dpi=300)
 
-    fig, _ = plot_classical_evolution(solution[-1000::])
+    fig, _ = plot_classical_evolution(solution[-100::])
     fig.savefig("classical_evolution.png", dpi=300)
 
-    fig, _ = plot_alpha_r_evolution(solution[-1000::])
+    fig, _ = plot_alpha_r_evolution(solution[-100::])
     fig.savefig("alpha_r_evolution_last.png", dpi=300)
 
     plt.show()
