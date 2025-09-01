@@ -4,7 +4,9 @@ from typing import Any
 
 import numpy as np
 import sympy as sp
+from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib.ticker import MaxNLocator
 from slate_core import plot
 from sympy.physics.units import hbar
 
@@ -115,21 +117,22 @@ def plot_uncertainty_against_lambda_w_logspace() -> None:
     eta_lambda_grid, eta_omega_grid = np.meshgrid(eta_lambda, eta_omega)
     eta_m = 1 * np.ones_like(eta_lambda_grid)
     uncertainty = evaluate_equilibrium_uncertainty(
-        eta_m, eta_omega_grid, eta_lambda_grid
+        eta_m, 1 / eta_omega_grid, 1 / eta_lambda_grid
     )
-    fig, ax = plot.get_figure()
+    fig, ax = plt.subplots(figsize=(4, 3))
 
     mesh = ax.pcolormesh(eta_lambda_grid, eta_omega_grid, 2 * np.sqrt(uncertainty) - 1)
     mesh.set_clim(0, None)
 
-    fig.colorbar(mesh)
-    ax.set_title(
-        r"Plot of quantum uncertainty against $\eta_\lambda$ and $\eta_\omega$"
-    )
-    ax.set_xlabel(r"$\eta_\lambda$")
-    ax.set_ylabel(r"$\eta_\omega$")
+    cbar = fig.colorbar(mesh)
+    cbar.set_ticks(MaxNLocator(nbins=5))
+    fig.tight_layout()
+    ax.set_title(r"Plot of quantum uncertainty against $\Lambda$ and $\Omega$")
+    ax.set_xlabel(r"$\Lambda$")
+    ax.set_ylabel(r"$\Omega$")
     ax.set_xscale("log")
     ax.set_yscale("log")
+    fig.savefig("uncertainty_lambda_omega_logspace.png", dpi=600)
     fig.show()
 
 
