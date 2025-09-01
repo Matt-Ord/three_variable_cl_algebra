@@ -12,7 +12,6 @@ from three_variable.coherent_states import (
     expectation_from_formula,
 )
 from three_variable.equilibrium_squeeze import (
-    evaluate_equilibrium_squeeze_ratio,
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
 )
@@ -20,7 +19,7 @@ from three_variable.projected_sse import get_harmonic_term, get_kinetic_term
 from three_variable.simulation import (
     EtaParameters,
     SimulationConfig,
-    estimate_r0,
+    evaluate_equilibrium_squeeze_ratio,
     hbar_value,
     run_projected_simulation,
 )
@@ -50,9 +49,8 @@ def get_energy_from_alpha(
     energy = expectation_from_formula(energy)
     energy = squeeze_ratio_from_zeta_expr(energy)
     r_eq = evaluate_equilibrium_squeeze_ratio(
-        eta_lambda=np.array(eta_lamda_val),
-        eta_omega=np.array(eta_omega_val),
-        eta_m=np.array(eta_m_val),
+        eta_lambda_val=eta_lambda_val,
+        eta_omega_val=eta_omega_val,
     )
     energy = dimensionless_from_full(energy)
     energy = energy.subs(
@@ -75,21 +73,21 @@ def get_energy_from_alpha(
 
 if __name__ == "__main__":
     eta_m_val = 1e22
-    eta_lamda_val = 60
+    eta_lambda_val = 60
     eta_omega_val = 1
     KBT_value = Boltzmann * 200
 
     time_scale = hbar_value / KBT_value
     print("Estimating initial r0")
-    r0_initial_estimate = estimate_r0(
-        eta_lambda_val=eta_lamda_val,
+    r0_initial_estimate = evaluate_equilibrium_squeeze_ratio(
+        eta_lambda_val=eta_lambda_val,
         eta_omega_val=eta_omega_val,
     )
     print("Running simulation")
     solution = run_projected_simulation(
         SimulationConfig(
             params=EtaParameters(
-                eta_lambda=eta_lamda_val,
+                eta_lambda=eta_lambda_val,
                 eta_m=eta_m_val,
                 eta_omega=eta_omega_val,
                 kbt_div_hbar=KBT_value / hbar_value,
@@ -107,7 +105,7 @@ if __name__ == "__main__":
     energy_values = np.real(
         get_energy_from_alpha(
             alpha_value=steady_state.alpha,
-            eta_lambda_val=eta_lamda_val,
+            eta_lambda_val=eta_lambda_val,
             eta_omega_val=eta_omega_val,
             eta_m_val=eta_m_val,
             KBT_val=KBT_value,

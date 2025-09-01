@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sdeint  # type: ignore[import-untyped]
 import sympy as sp
+from scipy.constants import (  # type: ignore scipy
+    Boltzmann,
+)
 from slate_core.util import timed
 from sympy.physics.units import hbar
 
@@ -37,8 +40,7 @@ from three_variable.equilibrium_squeeze import (
     squeeze_ratio_from_zeta_expr,
 )
 
-if TYPE_CHECKING:
-    from .physical_systems import EtaParameters
+KBT_value = Boltzmann * 300
 hbar_value = 1.0545718e-34
 
 
@@ -76,11 +78,13 @@ class SimulationResult:
         alpha_derivative = squeeze_ratio_from_zeta_expr(
             get_full_derivative("alpha").subs(sp.Symbol("V_1"), 0)
         )
-        alpha_derivative = explicit_from_dimensionless(alpha_derivative, self.params)
+        alpha_derivative = (
+            explicit_from_dimensionless(alpha_derivative, self.params)
+            * KBT_value
+            / hbar_value
+        )
         alpha_derivative_fn = sp.lambdify(
-            (alpha, squeeze_ratio, noise),
-            alpha_derivative * self.params.kbt_div_hbar,
-            modules="numpy",
+            (alpha, squeeze_ratio, noise), alpha_derivative, modules="numpy"
         )
         return np.array(
             alpha_derivative_fn(self.alpha, self.squeeze_ratio, self.numerical_noise)  # type: ignore[unknown]
@@ -103,6 +107,7 @@ class SimulationResult:
             alpha=self.alpha[key],
             squeeze_ratio=self.squeeze_ratio[key],
             params=self.params,
+            numerical_noise=self.numerical_noise[key],  # type: ignore[no-redef]
         )
 
 
@@ -123,13 +128,15 @@ def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr
                 eta_lambda: params.eta_lambda,
                 eta_m: params.eta_m,
                 eta_omega: params.eta_omega,
-                KBT: hbar,  # KBT = hbar, scaled
+                KBT: params.kbt_div_hbar * hbar,
             }
         )
     )
 
 
-def estimate_r0(eta_lambda_val: float, eta_omega_val: float) -> np.complex128:
+def evaluate_equilibrium_squeeze_ratio(
+    eta_lambda_val: float, eta_omega_val: float
+) -> np.complex128:
     """Estimate the initial value of r0 based on eta_lambda and eta_omega."""
     r_eq = get_equilibrium_squeeze_ratio()
     r0 = sp.lambdify((eta_lambda, eta_omega), r_eq, modules="numpy")  # type: ignore[no-redef]
@@ -145,7 +152,9 @@ def simulation_time_and_noise(
     # Generate the noise
     generator = np.random.default_rng(seed=42)
     # transform time to units of hbar / KBT
-    simulation_times = config.times * config.params.kbt_div_hbar
+    simulation_times = (
+        (config.times / hbar_value) * KBT_value / config.params.kbt_div_hbar
+    )
     time_step = (simulation_times[len(simulation_times) - 1] - simulation_times[0]) / (
         len(simulation_times) - 1
     )  # assuming equal time steps
@@ -157,7 +166,6 @@ def simulation_time_and_noise(
 
 @timed
 def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
-    np.array([config.alpha_0, config.zeta_0], dtype=np.complex128)
     params = config.params
 
     zeta_derivative = get_deterministic_derivative("zeta").subs(sp.Symbol("V_1"), 0)
@@ -193,15 +201,17 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     diff_expr = sp.Matrix(
         [[alpha_derivative_diffusion_re, alpha_derivative_diffusion_im], [0, 0]]
     )
-    diff_expr = sp.Matrix([[alpha_derivative_diffusion, 0], [0, 0]])
-
     t = sp.Symbol("t", real=True)
     drift_func = sp.lambdify(
-        (t, sp.Matrix([alpha, squeeze_ratio])), drift_expr, modules="numpy"
-    )  # type: ignore[no-redef]
+        (t, sp.Matrix([alpha, squeeze_ratio])),  # type: ignore[no-redef]
+        drift_expr,  # type: ignore[no-redef]
+        modules="numpy",
+    )
     diff_func = sp.lambdify(
-        (t, sp.Matrix([alpha, squeeze_ratio])), diff_expr, modules="numpy"
-    )  # type: ignore[no-redef]
+        (t, sp.Matrix([alpha, squeeze_ratio])),  # type: ignore[no-redef]
+        diff_expr,  # type: ignore[no-redef]
+        modules="numpy",
+    )
 
     def coherent_derivative(
         y: np.ndarray[Any, np.dtype[np.complex128]], t: float

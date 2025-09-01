@@ -500,6 +500,14 @@ if __name__ == "__main__":
         f"Probability normalization failed: {sum_of_prob}"
     )
 
+    fig, ax, mesh = plot_probability_distribution(
+        gaussian_solutions, x_mesh=x_mesh, p_mesh=p_mesh
+    )
+    mesh.set_clim(0, None)
+    ax.set_title("Probability Distribution Function")
+    fig.savefig("probability_distribution.png", dpi=300)
+    fig.clear()
+
     # sort the energy values and probability values
     sorted_indices = np.argsort(energy.ravel())
     energy_val_sorted = energy.ravel()[sorted_indices]
@@ -521,12 +529,4 @@ if __name__ == "__main__":
     ax.set_title("Energy vs Probability Density")
     ax.legend(loc="upper right")
     fig.savefig("energy_vs_probability.png", dpi=300)
-    fig.clear()
-
-    fig, ax, mesh = plot_probability_distribution(
-        gaussian_solutions, x_mesh=x_mesh, p_mesh=p_mesh
-    )
-    mesh.set_clim(0, None)
-    ax.set_title("Probability Distribution Function")
-    fig.savefig("probability_distribution.png", dpi=300)
     fig.clear()

@@ -35,10 +35,12 @@ except ImportError:
 
 
 from three_variable.simulation._projected_equations import (
+    KBT_value,
     SimulationConfig,
     SimulationResult,
-    estimate_r0,
+    evaluate_equilibrium_squeeze_ratio,
     explicit_from_dimensionless,
+    hbar_value,
     run_projected_simulation,
 )
 from three_variable.simulation.physical_systems import (
@@ -67,10 +69,12 @@ __all__ = [
     "BaseParameters",
     "ElenaParameters",
     "EtaParameters",
+    "KBT_value",
     "SimulationConfig",
     "SimulationResult",
-    "estimate_r0",
+    "evaluate_equilibrium_squeeze_ratio",
     "explicit_from_dimensionless",
     "get_condition_from_params",
+    "hbar_value",
     "run_projected_simulation",
 ]
