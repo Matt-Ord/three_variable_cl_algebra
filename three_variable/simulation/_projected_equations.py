@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import sdeint  # type: ignore[import-untyped]
 import sympy as sp
-from scipy.constants import (  # type: ignore scipy
-    Boltzmann,
-)
+from scipy.constants import hbar as hbar_value  # type: ignore[import-untyped]
 from slate_core.util import timed
 from sympy.physics.units import hbar
 
@@ -21,6 +19,7 @@ from three_variable.projected_sse import (
     get_full_derivative,
     get_stochastic_derivative,
 )
+from three_variable.simulation.physical_systems import Units
 from three_variable.symbols import (
     KBT,
     alpha,
@@ -39,9 +38,6 @@ from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
 )
-
-KBT_value = Boltzmann * 300
-hbar_value = 1.0545718e-34
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -80,8 +76,7 @@ class SimulationResult:
         )
         alpha_derivative = (
             explicit_from_dimensionless(alpha_derivative, self.params)
-            * KBT_value
-            / hbar_value
+            * self.params.kbt_div_hbar
         )
         alpha_derivative_fn = sp.lambdify(
             (alpha, squeeze_ratio, noise), alpha_derivative, modules="numpy"
@@ -143,25 +138,19 @@ def evaluate_equilibrium_squeeze_ratio(
     return r0(eta_lambda_val, eta_omega_val)  # type: ignore unknown
 
 
-def simulation_time_and_noise(
+def _get_simulation_times(
     config: SimulationConfig,
-) -> tuple[
-    np.ndarray[Any, np.dtype[np.float64]], np.ndarray[Any, np.dtype[np.float64]]
-]:
+) -> np.ndarray[Any, np.dtype[np.float64]]:
     """Generate simulation times and numerical noise."""
-    # Generate the noise
-    generator = np.random.default_rng(seed=42)
     # transform time to units of hbar / KBT
-    simulation_times = (
-        (config.times / hbar_value) * KBT_value / config.params.kbt_div_hbar
-    )
-    time_step = (simulation_times[len(simulation_times) - 1] - simulation_times[0]) / (
-        len(simulation_times) - 1
-    )  # assuming equal time steps
-    numerical_noise = sdeint.deltaW(
-        len(simulation_times) - 1, 2, time_step, generator
-    )  # shape (N, 2)
-    return simulation_times, numerical_noise
+    return Units().time_into(config.times, config.params.units)
+
+
+def _get_simulation_noise(
+    n: int, dt: float
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+    """Generate simulation times and numerical noise."""
+    return sdeint.deltaW(n, 2, dt)
 
 
 @timed
@@ -223,20 +212,22 @@ def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:
         return np.array(diff_func(t, y)).astype(np.complex128)  # type: ignore unknown
 
-    # Get the simulation times and numerical noise
-    simulation_times, numerical_noise = simulation_time_and_noise(config)
+    simulation_times = _get_simulation_times(config)
+    simulation_noise = _get_simulation_noise(
+        len(simulation_times) - 1, simulation_times[1] - simulation_times[0]
+    )
     # Run the simulation using the SDE solver
     sol = sdeint.stratSRS2(
         f=coherent_derivative,
         G=stochastic_derivative,
         y0=np.array([config.alpha_0, config.r_0], dtype=np.complex128),
         tspan=simulation_times,
-        dW=numerical_noise,
+        dW=simulation_noise,
     )
     return SimulationResult(
         times=config.times,
         params=config.params,
         alpha=sol[:, 0].astype(np.complex128),
         squeeze_ratio=sol[:, 1].astype(np.complex128),
-        numerical_noise=numerical_noise[:, 0] + 1j * numerical_noise[:, 1],
+        numerical_noise=simulation_noise[:, 0] + 1j * simulation_noise[:, 1],
     )

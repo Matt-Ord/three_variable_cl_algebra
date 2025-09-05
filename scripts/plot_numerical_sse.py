@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 from matplotlib.ticker import MaxNLocator
+from scipy.constants import Boltzmann  # type: ignore[import-untyped]
+from scipy.constants import hbar as hbar_value  # type: ignore[import-untyped]
 
 from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
@@ -13,11 +15,9 @@ from three_variable.equilibrium_squeeze import (
 )
 from three_variable.simulation import (
     EtaParameters,
-    KBT_value,
     SimulationConfig,
     SimulationResult,
     evaluate_equilibrium_squeeze_ratio,
-    hbar_value,
     run_projected_simulation,
 )
 from three_variable.simulation.physical_systems import ELENA_NA_CU
@@ -61,7 +61,8 @@ def plot_classical_eom_comparison(
     fig, [ax0, ax1] = plt.subplots(nrows=2)
     ax0 = cast("Axes", ax0)
     ax1 = cast("Axes", ax1)
-    stiffness = -0.5 * result.params.eta_m * KBT_value / (result.params.eta_omega**2)
+    kb_t_value = result.params.kbt_div_hbar * hbar_value
+    stiffness = -0.5 * result.params.eta_m * kb_t_value / (result.params.eta_omega**2)
     ax0.plot(result.times, stiffness * result.x, label=r"$-x m \omega^2$")
     dpdt = np.gradient(result.p, result.times)
     ax0.plot(result.times, dpdt, label="$\\frac{dp}{dt}$")
@@ -72,7 +73,7 @@ def plot_classical_eom_comparison(
 
     ax1.plot(result.times, result.p, label="$p$")
     dxdt = np.gradient(result.x, result.times)
-    m = result.params.eta_m * hbar_value**2 / (2 * KBT_value)
+    m = result.params.eta_m * hbar_value**2 / (2 * kb_t_value)
     ax1.plot(result.times, dxdt * m, label="$\\frac{dx}{dt} m$")
     ax1.set_title("P Evolution")
     ax1.set_xlabel("Time")
@@ -89,7 +90,8 @@ def plot_classical_evolution_formula(
     fig, [ax0, ax1] = plt.subplots(nrows=2)
     ax0 = cast("Axes", ax0)
     ax1 = cast("Axes", ax1)
-    stiffness = -0.5 * result.params.eta_m * KBT_value / (result.params.eta_omega**2)
+    kb_t_value = result.params.kbt_div_hbar * hbar_value
+    stiffness = -0.5 * result.params.eta_m * kb_t_value / (result.params.eta_omega**2)
     ax0.plot(result.times, stiffness * result.x, label="$x$")
     dpdt = np.gradient(result.p, result.times)
     ax0.plot(result.times, dpdt, label="$\\frac{dp}{dt}$")
@@ -99,7 +101,7 @@ def plot_classical_evolution_formula(
     ax0.legend()
 
     ax1.plot(result.times, result.p, label="$p$")
-    m = result.params.eta_m * hbar_value**2 / (2 * KBT_value)
+    m = result.params.eta_m * hbar_value**2 / (2 * kb_t_value)
     ax1.plot(
         result.times, result.x_derivative_equilibrium * m, label="$\\frac{dx}{dt} m$"
     )
@@ -182,7 +184,7 @@ if __name__ == "__main__":
     eta_m_val = ELENA_NA_CU.eta_parameters.eta_m
     eta_lambda_val = ELENA_NA_CU.eta_parameters.eta_lambda
     eta_omega_val = ELENA_NA_CU.eta_parameters.eta_omega
-    time_scale = hbar_value / KBT_value
+    time_scale = hbar_value / 300 * Boltzmann
     print("Estimating initial r0")
     equilibrium_ratio = evaluate_equilibrium_squeeze_ratio(
         eta_lambda_val=eta_lambda_val,
@@ -195,11 +197,11 @@ if __name__ == "__main__":
                 eta_lambda=eta_lambda_val,
                 eta_m=eta_m_val,
                 eta_omega=eta_omega_val,
-                kbt_div_hbar=1,
+                kbt_div_hbar=1 / time_scale,
             ),
             alpha_0=0.0 + 0.0j,
             r_0=equilibrium_ratio,
-            times=np.linspace(0, 1000, 50000) * time_scale,
+            times=np.linspace(0, 20, 1000) * time_scale,
         )
     )
 
@@ -210,10 +212,10 @@ if __name__ == "__main__":
     fig, _ = plot_alpha_r_evolution(solution)
     fig.savefig("alpha_r_evolution.png", dpi=300)
 
-    fig, _ = plot_classical_eom_comparison(solution[-1000::])
+    fig, _ = plot_classical_eom_comparison(solution)
     fig.savefig("classical_eom_comparison.png", dpi=300)
 
-    fig, _ = plot_classical_evolution(solution[-1000::])
+    fig, _ = plot_classical_evolution(solution)
     fig.savefig("classical_evolution.png", dpi=300)
 
     solution = run_projected_simulation(
@@ -222,7 +224,7 @@ if __name__ == "__main__":
                 eta_lambda=eta_lambda_val,
                 eta_m=eta_m_val,
                 eta_omega=eta_omega_val,
-                kbt_div_hbar=1,
+                kbt_div_hbar=1 / time_scale,
             ),
             alpha_0=0.0 + 0.0j,
             r_0=1.5 * equilibrium_ratio * np.exp(1j * 0.1),
