@@ -141,7 +141,6 @@ def evaluate_equilibrium_squeeze_ratio(
 def _get_simulation_times(
     config: SimulationConfig,
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
-    """Generate simulation times and numerical noise."""
     # transform time to units of hbar / KBT
     return Units().time_into(config.times, config.params.units)
 
@@ -149,7 +148,6 @@ def _get_simulation_times(
 def _get_simulation_noise(
     n: int, dt: float
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
-    """Generate simulation times and numerical noise."""
     return sdeint.deltaW(n, 2, dt)
 
 
