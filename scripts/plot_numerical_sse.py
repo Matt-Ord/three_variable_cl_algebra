@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, cast
 
 import matplotlib.pyplot as plt
@@ -8,11 +9,16 @@ import sympy as sp
 from matplotlib.ticker import MaxNLocator
 from scipy.constants import Boltzmann  # type: ignore[import-untyped]
 from scipy.constants import hbar as hbar_value  # type: ignore[import-untyped]
+from slate_core.util import timed
 
+from three_variable.coherent_states import (
+    expectation_from_formula,
+)
 from three_variable.equilibrium_squeeze import (
     squeeze_ratio,
     squeeze_ratio_from_zeta_expr,
 )
+from three_variable.projected_sse import get_harmonic_term, get_kinetic_term
 from three_variable.simulation import (
     EtaParameters,
     SimulationConfig,
@@ -21,11 +27,23 @@ from three_variable.simulation import (
     run_projected_simulation,
 )
 from three_variable.simulation.physical_systems import ELENA_NA_CU
-from three_variable.symbols import eta_m, zeta
+from three_variable.symbols import (
+    KBT,
+    alpha,
+    dimensionless_from_full,
+    eta_lambda,
+    eta_m,
+    eta_omega,
+    formula_from_expr,
+    hbar,
+    zeta,
+)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
+
+    from three_variable.simulation._projected_equations import SimulationResult
 
 
 def plot_alpha_r_evolution(
@@ -180,6 +198,57 @@ def plot_r_theta_evolution(
     return fig, (ax0, ax1)
 
 
+@timed
+def get_energy_from_simulation(
+    result: SimulationResult,
+) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Calculate the energy distribution of the system."""
+    energy = get_kinetic_term() + get_harmonic_term()
+    energy = formula_from_expr(energy)
+    energy = expectation_from_formula(energy)
+    energy = squeeze_ratio_from_zeta_expr(energy)
+
+    energy = dimensionless_from_full(energy)
+    energy = energy.subs(
+        {
+            eta_lambda: result.params.eta_lambda,
+            eta_omega: result.params.eta_omega,
+            eta_m: result.params.eta_m,
+            hbar: 1,
+            KBT: result.params.kbt_div_hbar,
+        }
+    )
+
+    energy_fn = sp.lambdify(
+        (alpha, squeeze_ratio),
+        energy,
+        modules="numpy",
+    )
+    return np.real(energy_fn(result.alpha, result.squeeze_ratio))  # type: ignore[misc]
+
+
+def plot_energy_distribution(
+    result: SimulationResult,
+) -> tuple[Figure, Axes]:
+    fig, ax = plt.subplots()
+
+    energy = get_energy_from_simulation(result)
+    energy_hist, energy_bins = np.histogram(energy, bins=100)
+    energy_bins = 0.5 * (energy_bins[1:] + energy_bins[:-1])
+    ax.plot(energy_bins, np.log(energy_hist), label="Energy Distribution")
+    ax.set_xlabel("Energy / hbar")
+    ax.set_ylabel("Log Probability Density")
+    ax.set_title("Energy Distribution of the System")
+
+    kbt_line = (
+        -(energy_bins - energy_bins[0]) / result.params.kbt_div_hbar
+        + np.log(energy_hist)[0]
+    )
+    ax.plot(energy_bins, kbt_line, label="1/KBT Line", linestyle="--", color="orange")
+    ax.legend()
+    return fig, ax
+
+
 if __name__ == "__main__":
     eta_m_val = ELENA_NA_CU.eta_parameters.eta_m
     eta_lambda_val = ELENA_NA_CU.eta_parameters.eta_lambda
@@ -191,19 +260,18 @@ if __name__ == "__main__":
         eta_omega_val=eta_omega_val,
     )
     print("Running simulation")
-    solution = run_projected_simulation(
-        SimulationConfig(
-            params=EtaParameters(
-                eta_lambda=eta_lambda_val,
-                eta_m=eta_m_val,
-                eta_omega=eta_omega_val,
-                kbt_div_hbar=1 / time_scale,
-            ),
-            alpha_0=0.0 + 0.0j,
-            r_0=equilibrium_ratio,
-            times=np.linspace(0, 20, 1000) * time_scale,
-        )
+    alpha_config = SimulationConfig(
+        params=EtaParameters(
+            eta_lambda=eta_lambda_val,
+            eta_m=eta_m_val,
+            eta_omega=eta_omega_val,
+            kbt_div_hbar=1 / time_scale,
+        ),
+        alpha_0=0.0 + 0.0j,
+        r_0=equilibrium_ratio,
+        times=np.linspace(0, 20, 1000) * time_scale,
     )
+    solution = run_projected_simulation(alpha_config)
 
     print("Simulation completed")
     print("Final (equilibrium) r:", solution.squeeze_ratio[-1])
@@ -217,6 +285,14 @@ if __name__ == "__main__":
 
     fig, _ = plot_classical_evolution(solution)
     fig.savefig("classical_evolution.png", dpi=300)
+
+    solution = run_projected_simulation(
+        dataclasses.replace(
+            alpha_config, times=np.linspace(0, 20000, 100000) * time_scale
+        )
+    )
+    fig, _ = plot_energy_distribution(solution)
+    fig.savefig("energy_distribution.png", dpi=300)
 
     solution = run_projected_simulation(
         SimulationConfig(
