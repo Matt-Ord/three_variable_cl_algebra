@@ -199,7 +199,7 @@ def plot_r_theta_evolution(
 
 
 @timed
-def get_energy_from_simulation(
+def _get_energy_from_simulation(
     result: SimulationResult,
 ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
     """Calculate the energy distribution of the system."""
@@ -227,25 +227,46 @@ def get_energy_from_simulation(
     return np.real(energy_fn(result.alpha, result.squeeze_ratio))  # type: ignore[misc]
 
 
+def _get_binned_energy(
+    energy: np.ndarray, *, n_bins: int = 100
+) -> tuple[np.ndarray, np.ndarray]:
+    energy_hist, bin_edges = np.histogram(energy, bins=n_bins, density=True)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+    bin_centers = bin_centers[energy_hist > 0]
+    energy_hist = energy_hist[energy_hist > 0]
+    return bin_centers, energy_hist
+
+
+def _fit_to_kbt_line(
+    energy: np.ndarray,
+    density: np.ndarray,
+) -> tuple[float, float]:
+    slope, intercept = np.polyfit(energy, np.log(density), 1)
+    return slope, intercept
+
+
 def plot_energy_distribution(
     result: SimulationResult,
 ) -> tuple[Figure, Axes]:
     fig, ax = plt.subplots()
 
-    energy = get_energy_from_simulation(result)
-    energy_hist, energy_bins = np.histogram(energy, bins=100)
-    energy_bins = 0.5 * (energy_bins[1:] + energy_bins[:-1])
-    ax.plot(energy_bins, np.log(energy_hist), label="Energy Distribution")
+    energy = _get_energy_from_simulation(result)
+    binned_energy, density = _get_binned_energy(energy)
+
+    ax.plot(binned_energy, density, label="Energy Distribution")
     ax.set_xlabel("Energy / hbar")
     ax.set_ylabel("Log Probability Density")
     ax.set_title("Energy Distribution of the System")
 
-    kbt_line = (
-        -(energy_bins - energy_bins[0]) / result.params.kbt_div_hbar
-        + np.log(energy_hist)[0]
-    )
-    ax.plot(energy_bins, kbt_line, label="1/KBT Line", linestyle="--", color="orange")
+    slope, intercept = _fit_to_kbt_line(binned_energy, density)
+    fitted = np.exp(slope * binned_energy + intercept)
+    (line,) = ax.plot(binned_energy, fitted, label="Fit")
+    line.set_linestyle("--")
+    expected = np.exp((-1 / result.params.kbt_div_hbar) * binned_energy + intercept)
+    (line,) = ax.plot(binned_energy, expected, label="Expected from KBT")
+    line.set_linestyle("--")
     ax.legend()
+    ax.set_yscale("log")
     return fig, ax
 
 
@@ -288,7 +309,8 @@ if __name__ == "__main__":
 
     solution = run_projected_simulation(
         dataclasses.replace(
-            alpha_config, times=np.linspace(0, 20000, 100000) * time_scale
+            alpha_config,
+            times=np.linspace(0, 20000, 100000) * time_scale,
         )
     )
     fig, _ = plot_energy_distribution(solution)
