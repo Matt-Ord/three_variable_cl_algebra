@@ -19,6 +19,8 @@ dependencies = [
     "slate_quantum[plot,qutip] @ git+https://github.com/Matt-Ord/slate_quantum.git@1011c95f42e32e5edd48f801986be6e98df739df",
     "sdeint>=0.3.0",
 ]
+[dependency-groups]
+dev = ["ruff", "pytest>=8.3.4", "pyright==1.1.403"]
 
 [project.optional-dependencies]
 simulate = [
@@ -102,6 +104,3 @@ reportUnknownMemberType = false
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
-[dependency-groups]
-dev = ["ruff", "pytest>=8.3.4", "pyright==1.1.403"]

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, override
 
 import numpy as np
 import sdeint  # type: ignore[import-untyped]
@@ -29,6 +30,7 @@ from three_variable.symbols import (
     noise,
     zeta,
 )
+from three_variable.util import file_cached
 
 if TYPE_CHECKING:
     from three_variable.simulation.physical_systems import EtaParameters
@@ -113,6 +115,11 @@ class SimulationConfig:
     r_0: complex
     times: np.ndarray[Any, np.dtype[np.float64]]
 
+    @override
+    def __hash__(self) -> int:
+        times_hash = hash((self.times[0], self.times[-1], len(self.times)))
+        return hash((self.params, self.alpha_0, self.r_0, times_hash))
+
 
 def explicit_from_dimensionless(expr: sp.Expr, params: EtaParameters) -> sp.Expr:
     """Convert a dimensionless value to explicit units."""
@@ -151,7 +158,12 @@ def _get_simulation_noise(
     return sdeint.deltaW(n, 2, dt)
 
 
+def _run_projected_simulation(config: SimulationConfig) -> Path:
+    return Path(f".cache/projected_simulation.{hash(config)}.npz")
+
+
 @timed
+@file_cached(_run_projected_simulation)
 def run_projected_simulation(config: SimulationConfig) -> SimulationResult:
     params = config.params
 
