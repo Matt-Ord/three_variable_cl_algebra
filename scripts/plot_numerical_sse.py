@@ -326,7 +326,8 @@ if __name__ == "__main__":
             ),
             alpha_0=0.0 + 0.0j,
             r_0=1.5 * equilibrium_ratio * np.exp(1j * 0.1),
-            times=np.linspace(0, 50, 10000) * time_scale,
+            times=np.linspace(0, 1000, 10000) * time_scale,
+
         )
     )
     fig, _ = plot_r_theta_evolution(solution)
